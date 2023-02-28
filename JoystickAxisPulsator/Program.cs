@@ -215,8 +215,14 @@ namespace JoystickAxisPulsator
                 JoystickUpdate[] datas = joystick.GetBufferedData();
                 foreach (JoystickUpdate state in datas)
                     Console.WriteLine(state);
-                Thread.Sleep(1000/frequency);
+
+                if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Escape)
+                    break;
+
+                Thread.Sleep(1000 / frequency);
             }
+
+            ShowMainMenu();
         }
 
         static void SelectFrequency()
