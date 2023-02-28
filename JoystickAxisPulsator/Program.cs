@@ -9,17 +9,45 @@ namespace JoystickAxisPulsator
 {
     internal class Program
     {
-        static void Main(string[] args)
+        private static List<DeviceInstance> gamepads;
+        private static List<DeviceInstance> joysticks;
+        private static DirectInput directInput = new DirectInput();
+        private static Guid joystickGuid = Guid.Empty;
+        private static Joystick joystick;
+        private static string productName = "";
+
+        static void DrawTitle()
         {
-            #region welcomePrompt
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("====================================");
-            Console.WriteLine("||   Joystick Axis Pulsator v0.1  ||");            
+            Console.WriteLine("||   Joystick Axis Pulsator v0.1  ||");
             Console.WriteLine("||        by SOM-0x3B1            ||");
-            Console.WriteLine("====================================");
+            Console.WriteLine("====================================\n");
+        }
+
+        static void Main(string[] args)
+        {            
+            ShowWarningPrompt();
+
+            ShowMainMenu();            
+            
+            gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
+            joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
+            SelectJoystick();
+
+            joystick = new Joystick(directInput, joystickGuid);
+            joystick.Properties.BufferSize = 128;
+            joystick.Acquire();
+
+            CalibrateDevice();
+        }
+
+        static void ShowWarningPrompt()
+        {
+            DrawTitle();
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("\nWarning: ");
+            Console.Write("Warning: ");
             Console.ForegroundColor = ConsoleColor.White;
             Console.Write("The program will read the axis values of the selected joystick, \n" +
                 "and output an alternating pulse of emulated keypresses to a selected window. \n" +
@@ -50,15 +78,38 @@ namespace JoystickAxisPulsator
             }
             if (input == "n")
                 Environment.Exit(0);
-            #endregion
+        }
+
+        static void ShowMainMenu()
+        {
+            Console.Clear();
+            DrawTitle();
+
+            Console.WriteLine("Main menu\n");
+
+            Console.Write("  1. Select gamepad/joystick");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            if (joystickGuid == Guid.Empty)
+                Console.WriteLine($"  [none]");
+            else
+                Console.WriteLine($"  [{productName}]");
+            Console.ForegroundColor = ConsoleColor.White;
+
+            Console.WriteLine("  2. Calibrate device");
+            Console.WriteLine("  3. Select target window");
+            Console.WriteLine("  4. Start pulsing");
 
 
-            // Initialize DirectInput
-            DirectInput directInput = new DirectInput();
-            Guid joystickGuid = Guid.Empty;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("\nWhat would you like to do? (1-4): ");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.ReadLine();
+        }
 
-            List<DeviceInstance> gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
-            List<DeviceInstance> joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
+        static void SelectJoystick()
+        {
+            Console.Clear();
+            DrawTitle();
 
             Console.WriteLine("\nSearching for compatible devices...");
 
@@ -77,18 +128,18 @@ namespace JoystickAxisPulsator
                 joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
             }
 
-            #region joystickSelection
             Console.WriteLine("\nDevices found:");
 
             Console.WriteLine("\n  Gamepads:");
+            
             for (int i = 0; i < gamepads.Count; i++)
-                Console.WriteLine($"\t{i + 1}.\t{gamepads[i].ProductName}");
-            if(gamepads.Count == 0)
+                Console.WriteLine($"\t{i + 1}. {gamepads[i].ProductName}");
+            if (gamepads.Count == 0)
                 Console.WriteLine("\t-");
 
             Console.WriteLine("\n  Joysticks:");
             for (int i = gamepads.Count; i < joysticks.Count; i++)
-                Console.WriteLine($"\t{i + 1}.\t{joysticks[i - gamepads.Count].ProductName}");
+                Console.WriteLine($"\t{i + 1}. {joysticks[i - gamepads.Count].ProductName}");
             if (joysticks.Count == 0)
                 Console.WriteLine("\t-");
 
@@ -100,33 +151,31 @@ namespace JoystickAxisPulsator
                 Console.ForegroundColor = ConsoleColor.White;
                 int id = int.Parse(Console.ReadLine()) - 1;
                 if (id < gamepads.Count)
+                {
                     joystickGuid = gamepads[id].ProductGuid;
+                    productName = gamepads[id].ProductName;
+                }
                 else if (id >= gamepads.Count && id < joysticks.Count - gamepads.Count)
+                {
                     joystickGuid = joysticks[id].ProductGuid;
+                    productName = joysticks[id].ProductName;
+                }
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"\nInvalid id. Please enter a valid number (1-{joysticks.Count + gamepads.Count}).");
                 }
             }
-            #endregion
+            joysticks.Clear();
+            gamepads.Clear();
 
+            ShowMainMenu();
+        }
 
-            // Instantiate the joystick
-            Joystick joystick = new Joystick(directInput, joystickGuid);
-
-            Console.WriteLine($"Joystick/Gamepad GUID: {joystickGuid}");
-
-            // Query all suported ForceFeedback effects
-            IList<EffectInfo> allEffects = joystick.GetEffects();
-            foreach (EffectInfo effectInfo in allEffects)
-                Console.WriteLine("Effect available {0}", effectInfo.Name);
-
-            // Set BufferSize in order to use buffered data.
-            joystick.Properties.BufferSize = 16;
-
-            // Acquire the joystick
-            joystick.Acquire();
+        static void CalibrateDevice()
+        {
+            Console.Clear();
+            DrawTitle();
 
             // Poll events from joystick
             while (true)
