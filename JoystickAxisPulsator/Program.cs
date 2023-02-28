@@ -12,23 +12,29 @@ namespace JoystickAxisPulsator
         static void Main(string[] args)
         {
             #region welcomePrompt
-            Console.BackgroundColor = ConsoleColor.Gray;
-            Console.ForegroundColor = ConsoleColor.Black;
-            Console.WriteLine("Welcome to Joystick Axis Pulsator v0.1");
-
-            Console.BackgroundColor = ConsoleColor.Black;
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("\nDisclaimer: ");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("The program will read the values of the selected joystick, \n" +
-                "and output an alternating pulse of keypresses to the selected window. \n" +
-                "These emulated keypresses may cause some unexpected issues with your programs \n" +
-                "and system. By accepting the following propmt, you acknowledge that \n" +
-                "I (the developer of this tool) do not take responsibility for any of these issues. \n" +
+            Console.WriteLine("====================================");
+            Console.WriteLine("||   Joystick Axis Pulsator v0.1  ||");            
+            Console.WriteLine("||        by SOM-0x3B1            ||");
+            Console.WriteLine("====================================");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("\nWarning: ");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("The program will read the axis values of the selected joystick, \n" +
+                "and output an alternating pulse of emulated keypresses to a selected window. \n" +
+                "Since the app will spam these presses at a very high rate,");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(" they may cause some \n" +
+                "unexpected issues with your applications and system.");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("\nBy accepting the following propmt, you acknowledge that I, SOM-0x3B1 do not\n" +
+                "take responsibility for (but will gladly help with) any problems that this \n" +
+                "software might cause. \n\n" +
                 "Use this software at your own risk.");
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("\nDo you accept these terms? [Y/N]: ");
+            Console.Write("\n\nDo you accept these terms? [Y/N]: ");
             Console.ForegroundColor = ConsoleColor.White;
 
             string input = Console.ReadLine().ToLower();
@@ -54,13 +60,22 @@ namespace JoystickAxisPulsator
             List<DeviceInstance> gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
             List<DeviceInstance> joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
 
+            Console.WriteLine("\nSearching for compatible devices...");
+
             // If Joystick not found, throws an error
-            if (gamepads.Count + joysticks.Count == 0)
+            while (gamepads.Count + joysticks.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("No gamepad/joystick found.");
-                Console.ReadKey();
-                Environment.Exit(1);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("Press enter to retry.");
+
+                Console.ReadLine();
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("Searching for compatible devices...");
+                gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
+                joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
+
             }
 
             #region joystickSelection
@@ -97,13 +112,13 @@ namespace JoystickAxisPulsator
 
 
             // Instantiate the joystick
-            var joystick = new Joystick(directInput, joystickGuid);
+            Joystick joystick = new Joystick(directInput, joystickGuid);
 
-            Console.WriteLine("Found Joystick/Gamepad with GUID: {0}", joystickGuid);
+            Console.WriteLine($"Joystick/Gamepad GUID: {joystickGuid}");
 
             // Query all suported ForceFeedback effects
-            var allEffects = joystick.GetEffects();
-            foreach (var effectInfo in allEffects)
+            IList<EffectInfo> allEffects = joystick.GetEffects();
+            foreach (EffectInfo effectInfo in allEffects)
                 Console.WriteLine("Effect available {0}", effectInfo.Name);
 
             // Set BufferSize in order to use buffered data.
@@ -116,8 +131,8 @@ namespace JoystickAxisPulsator
             while (true)
             {
                 joystick.Poll();
-                var datas = joystick.GetBufferedData();
-                foreach (var state in datas)
+                JoystickUpdate[] datas = joystick.GetBufferedData();
+                foreach (JoystickUpdate state in datas)
                     Console.WriteLine(state);
             }
         }
