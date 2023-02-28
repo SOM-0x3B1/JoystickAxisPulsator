@@ -75,32 +75,33 @@ namespace JoystickAxisPulsator
                 Console.WriteLine("Searching for compatible devices...");
                 gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
                 joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
-
             }
 
             #region joystickSelection
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\nGamepads:");
-            Console.ForegroundColor = ConsoleColor.White;
-            for (int i = 0; i < gamepads.Count; i++)
-                Console.WriteLine($"  {i + 1}.\t{gamepads[i].ProductName}");
+            Console.WriteLine("\nDevices found:");
 
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\nJoysticks:");
-            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("\n  Gamepads:");
+            for (int i = 0; i < gamepads.Count; i++)
+                Console.WriteLine($"\t{i + 1}.\t{gamepads[i].ProductName}");
+            if(gamepads.Count == 0)
+                Console.WriteLine("\t-");
+
+            Console.WriteLine("\n  Joysticks:");
             for (int i = gamepads.Count; i < joysticks.Count; i++)
-                Console.WriteLine($"  {i + 1}.\t{joysticks[i - gamepads.Count].ProductName}");
+                Console.WriteLine($"\t{i + 1}.\t{joysticks[i - gamepads.Count].ProductName}");
+            if (joysticks.Count == 0)
+                Console.WriteLine("\t-");
 
 
             while (joystickGuid == Guid.Empty)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("Select the number of your gamepad/joystick: ");
+                Console.Write("\n\nSelect the number of your gamepad/joystick: ");
                 Console.ForegroundColor = ConsoleColor.White;
                 int id = int.Parse(Console.ReadLine()) - 1;
                 if (id < gamepads.Count)
                     joystickGuid = gamepads[id].ProductGuid;
-                else if (id > gamepads.Count && id < joysticks.Count)
+                else if (id >= gamepads.Count && id < joysticks.Count - gamepads.Count)
                     joystickGuid = joysticks[id].ProductGuid;
                 else
                 {
@@ -122,7 +123,7 @@ namespace JoystickAxisPulsator
                 Console.WriteLine("Effect available {0}", effectInfo.Name);
 
             // Set BufferSize in order to use buffered data.
-            joystick.Properties.BufferSize = 128;
+            joystick.Properties.BufferSize = 16;
 
             // Acquire the joystick
             joystick.Acquire();
