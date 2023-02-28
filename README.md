@@ -9,6 +9,8 @@ A standalone application that reads the axis states of a joystick, and sends pul
 - Throttle support
 - Device calibration
 - Frequency tuning
+- Windows selection
+- Optional toggle button
 
 ### Method
 This solution uses PWM (Pulse-Width Modulation) to convert the analog (eg. 50%, 75%, 33%) signals of the joystick to alternating keypresses.
