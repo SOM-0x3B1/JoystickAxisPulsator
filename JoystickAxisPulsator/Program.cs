@@ -11,11 +11,6 @@ namespace JoystickAxisPulsator
     {
         static void Main(string[] args)
         {
-            // Initialize DirectInput
-            DirectInput directInput = new DirectInput();
-            Guid joystickGuid = Guid.Empty;
-
-
             #region welcomePrompt
             Console.BackgroundColor = ConsoleColor.Gray;
             Console.ForegroundColor = ConsoleColor.Black;
@@ -37,7 +32,7 @@ namespace JoystickAxisPulsator
             Console.ForegroundColor = ConsoleColor.White;
 
             string input = Console.ReadLine().ToLower();
-            while(input != "n" && input != "y")
+            while (input != "n" && input != "y")
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("\nInvalid format. Please use 'Y' or 'N'.");
@@ -47,10 +42,14 @@ namespace JoystickAxisPulsator
 
                 input = Console.ReadLine().ToLower();
             }
-            if(input == "n")
+            if (input == "n")
                 Environment.Exit(0);
             #endregion
 
+
+            // Initialize DirectInput
+            DirectInput directInput = new DirectInput();
+            Guid joystickGuid = Guid.Empty;
 
             List<DeviceInstance> gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
             List<DeviceInstance> joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
@@ -59,10 +58,43 @@ namespace JoystickAxisPulsator
             if (gamepads.Count + joysticks.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("No joystick/Gamepad found.");
+                Console.WriteLine("No gamepad/joystick found.");
                 Console.ReadKey();
                 Environment.Exit(1);
             }
+
+            #region joystickSelection
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\nGamepads:");
+            Console.ForegroundColor = ConsoleColor.White;
+            for (int i = 0; i < gamepads.Count; i++)
+                Console.WriteLine($"  {i + 1}.\t{gamepads[i].ProductName}");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\nJoysticks:");
+            Console.ForegroundColor = ConsoleColor.White;
+            for (int i = gamepads.Count; i < joysticks.Count; i++)
+                Console.WriteLine($"  {i + 1}.\t{joysticks[i - gamepads.Count].ProductName}");
+
+
+            while (joystickGuid == Guid.Empty)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("Select the number of your gamepad/joystick: ");
+                Console.ForegroundColor = ConsoleColor.White;
+                int id = int.Parse(Console.ReadLine()) - 1;
+                if (id < gamepads.Count)
+                    joystickGuid = gamepads[id].ProductGuid;
+                else if (id > gamepads.Count && id < joysticks.Count)
+                    joystickGuid = joysticks[id].ProductGuid;
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"\nInvalid id. Please enter a valid number (1-{joysticks.Count + gamepads.Count}).");
+                }
+            }
+            #endregion
+
 
             // Instantiate the joystick
             var joystick = new Joystick(directInput, joystickGuid);
