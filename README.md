@@ -12,7 +12,11 @@ A standalone application that reads the axis states of a joystick, and sends pul
 - Windows selection
 - Optional toggle button
 
+<img align="left" width="400" height="260" src="https://www.onekilobit.eu/media/uploads/joystickPulsator/pwm.png">
+
 ### Method
 This solution uses PWM (Pulse-Width Modulation) to convert the analog (eg. 50%, 75%, 33%) signals of the joystick to alternating keypresses.
 
-<img align="left" width="400" height="260" src="https://www.onekilobit.eu/media/uploads/joystickPulsator/pwm.png">
+### Disclaimer
+Since the program will blindly spam the selected window with keys at a very high rate, it may will cause some issues with your applications and/or system.
+Please note that I do not take resposibility for any problem caused by the behaviur mentioned above (but will gladly help with it, if possible).
