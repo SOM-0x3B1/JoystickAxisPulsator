@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace JoystickAxisPulsator
@@ -15,6 +16,7 @@ namespace JoystickAxisPulsator
         private static Guid joystickGuid = Guid.Empty;
         private static Joystick joystick;
         private static string productName = "";
+        private static int frequency = 10;
 
         static void DrawTitle()
         {
@@ -29,17 +31,7 @@ namespace JoystickAxisPulsator
         {            
             ShowWarningPrompt();
 
-            ShowMainMenu();            
-            
-            gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
-            joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
-            SelectJoystick();
-
-            joystick = new Joystick(directInput, joystickGuid);
-            joystick.Properties.BufferSize = 128;
-            joystick.Acquire();
-
-            CalibrateDevice();
+            ShowMainMenu();  
         }
 
         static void ShowWarningPrompt()
@@ -56,7 +48,7 @@ namespace JoystickAxisPulsator
             Console.WriteLine(" they may cause some \n" +
                 "unexpected issues with your applications and system.");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("\nBy accepting the following propmt, you acknowledge that I, SOM-0x3B1 do not\n" +
+            Console.WriteLine("\nBy accepting the following prompt, you acknowledge that I (SOM-0x3B1) do not\n" +
                 "take responsibility for (but will gladly help with) any problems that this \n" +
                 "software might cause. \n\n" +
                 "Use this software at your own risk.");
@@ -97,13 +89,44 @@ namespace JoystickAxisPulsator
 
             Console.WriteLine("  2. Calibrate device");
             Console.WriteLine("  3. Select target window");
-            Console.WriteLine("  4. Start pulsing");
+            Console.Write("  4. Select pulse frequency");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine($"   [{frequency} Hz]");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("  5. Start pulsing");
 
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("\nWhat would you like to do? (1-4): ");
+            Console.Write("\nWhat would you like to do? (1-5): ");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.ReadLine();
+
+            int id = int.Parse(Console.ReadLine());
+            while(id < 1 || id > 5)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nInvalid id. Please enter a valid number (1-4).");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("\nWhat would you like to do? (1-5): ");
+                Console.ForegroundColor = ConsoleColor.White;
+
+                id = int.Parse(Console.ReadLine());
+            }
+
+            switch (id)
+            {
+                case 1:
+                    SelectJoystick();
+                    break;
+                case 2:
+                    CalibrateDevice();
+                    break;
+                case 4:
+                    SelectFrequency();
+                    break;
+                default:
+                    ShowMainMenu(); 
+                    break;
+            }
         }
 
         static void SelectJoystick()
@@ -112,6 +135,10 @@ namespace JoystickAxisPulsator
             DrawTitle();
 
             Console.WriteLine("\nSearching for compatible devices...");
+
+
+            gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
+            joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
 
             // If Joystick not found, throws an error
             while (gamepads.Count + joysticks.Count == 0)
@@ -169,6 +196,10 @@ namespace JoystickAxisPulsator
             joysticks.Clear();
             gamepads.Clear();
 
+            joystick = new Joystick(directInput, joystickGuid);
+            joystick.Properties.BufferSize = 128;
+            joystick.Acquire();
+
             ShowMainMenu();
         }
 
@@ -184,7 +215,56 @@ namespace JoystickAxisPulsator
                 JoystickUpdate[] datas = joystick.GetBufferedData();
                 foreach (JoystickUpdate state in datas)
                     Console.WriteLine(state);
+                Thread.Sleep(1000/frequency);
             }
+        }
+
+        static void SelectFrequency()
+        {
+            Console.Clear();
+            DrawTitle();
+
+            Console.WriteLine("Select frequency\n");
+
+            Console.WriteLine("  1. 10  Hz \t (low precision; high stability)");
+            Console.WriteLine("  2. 20  Hz");
+            Console.WriteLine("  3. 50  Hz");
+            Console.WriteLine("  4. 100 Hz \t (high precision; low stability)");
+
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("\nChoose your frequency (1-4): ");
+            Console.ForegroundColor = ConsoleColor.White;
+
+            int id = int.Parse(Console.ReadLine());
+            while (id < 1 || id > 4)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nInvalid id. Please enter a valid number (1-4).");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("\nChoose your frequency (1-4): ");
+                Console.ForegroundColor = ConsoleColor.White;
+
+                id = int.Parse(Console.ReadLine());
+            }
+
+            switch (id)
+            {
+                case 1:
+                    frequency = 10;
+                    break;
+                case 2:
+                    frequency = 20;
+                    break;
+                case 3:
+                    frequency = 50;
+                    break;
+                case 4:
+                    frequency = 100;
+                    break;
+            }
+
+            ShowMainMenu();
         }
     }
 }
