@@ -8,14 +8,14 @@ namespace JoystickAxisPulsator
 {
     public class Axis
     {
-        public int id = 0;
+        public string name;
         public int cValue;
         public int maxValue;
         public int minValue;
 
-        public Axis(int id, int value) 
+        public Axis(string name, int value) 
         { 
-            this.id = id;
+            this.name = name;
             this.cValue = value;
         }
     }

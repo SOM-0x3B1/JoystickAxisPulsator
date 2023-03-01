@@ -31,6 +31,27 @@ namespace JoystickAxisPulsator
         {            
             ShowWarningPrompt();
 
+            gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
+            joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
+
+            if (gamepads.Count > 0)
+            {
+                joystickGuid = gamepads[0].ProductGuid;
+                productName = gamepads[0].ProductName;           
+            }
+            else if(joysticks.Count > 0)
+            {
+                joystickGuid = joysticks[0].ProductGuid;
+                productName = joysticks[0].ProductName;
+            }
+
+            if (joystickGuid != Guid.Empty)
+            {
+                joystick = new Joystick(directInput, joystickGuid);
+                joystick.Properties.BufferSize = 128;
+                joystick.Acquire();
+            }
+
             ShowMainMenu();  
         }
 
@@ -136,7 +157,7 @@ namespace JoystickAxisPulsator
 
             Console.WriteLine("\nSearching for compatible devices...");
 
-
+            joystickGuid = Guid.Empty;
             gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
             joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
 
@@ -209,7 +230,13 @@ namespace JoystickAxisPulsator
             DrawTitle();
 
 
-            Dictionary<string, Axis> detectedInputs = new Dictionary<string, Axis>(); 
+            //Dictionary<string, Axis> detectedInputs = new Dictionary<string, Axis>(); 
+            List<Axis> allInputs = new List<Axis>();            
+            Dictionary<string, int> registeredInputs = new Dictionary<string, int>();
+
+            string[] requiredInputs = { "X", "Y", "Roll"};
+            int cInputIndex = 0;
+            Dictionary<string, Axis> inputs = new Dictionary<string, Axis>();
 
             // Poll events from joystick
             while (true)
@@ -219,18 +246,58 @@ namespace JoystickAxisPulsator
                 foreach (JoystickUpdate state in datas)
                 {
                     string inputType = state.Offset.ToString();
-                    if (!detectedInputs.ContainsKey(inputType))
-                        detectedInputs.Add(inputType, new Axis(detectedInputs.Count + 1, state.Value));
+                    if (!registeredInputs.ContainsKey(inputType))
+                    {
+                        registeredInputs.Add(inputType, allInputs.Count);
+                        allInputs.Add(new Axis(inputType, state.Value));                        
+                    }
                     else
-                        detectedInputs[inputType].cValue = state.Value;
+                        allInputs[registeredInputs[inputType]].cValue = state.Value;
                 }
 
                 Console.SetCursorPosition(0, 5);
-                foreach (var a in detectedInputs)
-                    Console.WriteLine($"{a.Value.id}. {a.Key} ->  {a.Value.cValue}\t\t");
 
-                if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Escape)
-                    break;
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("Move your joystick around to detect input types.\n");
+                Console.ForegroundColor = ConsoleColor.White;
+                
+                Console.WriteLine("Inputs detected: \n");
+                for (int i = 0; i < allInputs.Count; i++)
+                    Console.WriteLine($"  {i + 1}. {allInputs[i].name} ->  {allInputs[i].cValue}\t\t\t\t\t\t\t");
+
+                Console.WriteLine("\t\t\t\t\t\t\t\t\t\t\t\t");
+                foreach (var i in inputs)
+                {
+                    Console.Write($"{i.Key} axis: ");
+                    Console.Write(i.Value == null ? "ignore" : $"{i.Value.name} -> {i.Value.cValue}");
+                    Console.Write("\t\t\t\t\t\t\t\t\t\t\t\t\n");
+                }
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress the number of your {requiredInputs[cInputIndex]} axis (or press enter to ignore this axis)  ");
+                Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                Console.ForegroundColor = ConsoleColor.White;
+
+
+                if (Console.KeyAvailable)
+                {
+                    ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
+                    if (consoleKeyInfo.Key == ConsoleKey.Escape)
+                        break;
+                    else if ('1' <= consoleKeyInfo.KeyChar && consoleKeyInfo.KeyChar <= allInputs.Count.ToString()[0])
+                    {
+                        inputs[requiredInputs[cInputIndex]] = allInputs[int.Parse(consoleKeyInfo.KeyChar.ToString()) - 1];
+                        cInputIndex++;
+                    }
+                    else if (consoleKeyInfo.Key == ConsoleKey.Enter)
+                    {
+                        inputs[requiredInputs[cInputIndex]] = null;
+                        cInputIndex++;
+                    }
+
+                    if (cInputIndex == requiredInputs.Length)
+                        break;
+                }
 
                 Thread.Sleep(1000 / frequency);
             }
