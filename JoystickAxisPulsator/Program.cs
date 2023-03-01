@@ -16,7 +16,7 @@ namespace JoystickAxisPulsator
         private static Guid joystickGuid = Guid.Empty;
         private static Joystick joystick;
         private static string productName = "";
-        private static int frequency = 10;
+        private static int frequency = 50;
 
         static void DrawTitle()
         {
@@ -234,7 +234,7 @@ namespace JoystickAxisPulsator
             List<Axis> allInputs = new List<Axis>();            
             Dictionary<string, int> registeredInputs = new Dictionary<string, int>();
 
-            string[] requiredInputs = { "X", "Y", "Roll"};
+            string[] supportedInputs = { "X", "Y", "Roll"};
             int cInputIndex = 0;
             Dictionary<string, Axis> inputs = new Dictionary<string, Axis>();
 
@@ -274,7 +274,7 @@ namespace JoystickAxisPulsator
                 }
 
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress the number of your {requiredInputs[cInputIndex]} axis (or press enter to ignore this axis)  ");
+                Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress the number of your {supportedInputs[cInputIndex]} axis (or press enter to ignore this axis)  ");
                 Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                 Console.ForegroundColor = ConsoleColor.White;
 
@@ -286,16 +286,16 @@ namespace JoystickAxisPulsator
                         break;
                     else if ('1' <= consoleKeyInfo.KeyChar && consoleKeyInfo.KeyChar <= allInputs.Count.ToString()[0])
                     {
-                        inputs[requiredInputs[cInputIndex]] = allInputs[int.Parse(consoleKeyInfo.KeyChar.ToString()) - 1];
+                        inputs[supportedInputs[cInputIndex]] = allInputs[int.Parse(consoleKeyInfo.KeyChar.ToString()) - 1];
                         cInputIndex++;
                     }
                     else if (consoleKeyInfo.Key == ConsoleKey.Enter)
                     {
-                        inputs[requiredInputs[cInputIndex]] = null;
+                        inputs[supportedInputs[cInputIndex]] = null;
                         cInputIndex++;
                     }
 
-                    if (cInputIndex == requiredInputs.Length)
+                    if (cInputIndex == supportedInputs.Length)
                         break;
                 }
 
