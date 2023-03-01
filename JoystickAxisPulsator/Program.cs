@@ -209,7 +209,7 @@ namespace JoystickAxisPulsator
             DrawTitle();
 
 
-            Dictionary<string, int> detectedInputs = new Dictionary<string, int>(); 
+            Dictionary<string, Axis> detectedInputs = new Dictionary<string, Axis>(); 
 
             // Poll events from joystick
             while (true)
@@ -220,16 +220,21 @@ namespace JoystickAxisPulsator
                 {
                     string inputType = state.Offset.ToString();
                     if (!detectedInputs.ContainsKey(inputType))
-                        detectedInputs.Add(inputType, state.Value);
+                        detectedInputs.Add(inputType, new Axis(detectedInputs.Count + 1, state.Value));
                     else
-                        detectedInputs[inputType] = state.Value;
+                        detectedInputs[inputType].cValue = state.Value;
                 }
+
+                Console.SetCursorPosition(0, 5);
+                foreach (var a in detectedInputs)
+                    Console.WriteLine($"{a.Value.id}. {a.Key} ->  {a.Value.cValue}\t\t");
 
                 if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Escape)
                     break;
 
                 Thread.Sleep(1000 / frequency);
             }
+
 
             ShowMainMenu();
         }
