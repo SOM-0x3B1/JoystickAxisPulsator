@@ -1,6 +1,7 @@
 ﻿using SharpDX.DirectInput;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -17,6 +18,9 @@ namespace JoystickAxisPulsator
         private static Joystick joystick;
         private static string productName = "";
         private static int frequency = 50;
+        private static List<string> alignmentMap = new List<string>();
+        private static Coord dotPos = new Coord(0, 0);
+
 
         static void DrawTitle()
         {
@@ -27,8 +31,38 @@ namespace JoystickAxisPulsator
             Console.WriteLine("====================================\n");
         }
 
+        static void DrawAignmentMap()
+        {
+            for (int y = 0; y < alignmentMap.Count; y++)
+            {
+                for (int x = 0; x < alignmentMap[y].Length; x++)
+                {
+                    if (dotPos.X + 1 == x && dotPos.Y + 1 == y)
+                    {
+                        Console.BackgroundColor = ConsoleColor.Red;
+                        Console.Write("O");
+                        Console.BackgroundColor = ConsoleColor.Black;
+                    }
+                    else
+                    {
+                        if (alignmentMap[y][x] == '#')
+                            Console.BackgroundColor = ConsoleColor.White;
+                        Console.Write(alignmentMap[y][x]);
+                        Console.BackgroundColor = ConsoleColor.Black;
+                    }
+                }
+            }
+        }
+
+
         static void Main(string[] args)
-        {            
+        {
+            using (StreamReader r = new StreamReader("indicator.txt", Encoding.Default))
+            {
+                while (!r.EndOfStream)
+                    alignmentMap.Add(r.ReadLine());
+            }
+
             ShowWarningPrompt();
 
             gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
@@ -231,12 +265,17 @@ namespace JoystickAxisPulsator
 
 
             //Dictionary<string, Axis> detectedInputs = new Dictionary<string, Axis>(); 
-            List<Axis> allInputs = new List<Axis>();            
+            List<Axis> allInputs = new List<Axis>();
             Dictionary<string, int> registeredInputs = new Dictionary<string, int>();
 
-            string[] supportedInputs = { "X", "Y", "Roll"};
+            string[] supportedInputs = { "X axis", "Y axis", "Roll axis", "Panic buton" };
             int cInputIndex = 0;
             Dictionary<string, Axis> inputs = new Dictionary<string, Axis>();
+
+            string[] calPositions = { "front left", "back right" };
+            int cCalPosIndex = 0;
+
+            int calibrationPhase = 0;
 
             // Poll events from joystick
             while (true)
@@ -249,7 +288,7 @@ namespace JoystickAxisPulsator
                     if (!registeredInputs.ContainsKey(inputType))
                     {
                         registeredInputs.Add(inputType, allInputs.Count);
-                        allInputs.Add(new Axis(inputType, state.Value));                        
+                        allInputs.Add(new Axis(inputType, state.Value));
                     }
                     else
                         allInputs[registeredInputs[inputType]].cValue = state.Value;
@@ -257,28 +296,68 @@ namespace JoystickAxisPulsator
 
                 Console.SetCursorPosition(0, 5);
 
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("Move your joystick around to detect input types.\n");
-                Console.ForegroundColor = ConsoleColor.White;
-                
-                Console.WriteLine("Inputs detected: \n");
-                for (int i = 0; i < allInputs.Count; i++)
-                    Console.WriteLine($"  {i + 1}. {allInputs[i].name} ->  {allInputs[i].cValue}\t\t\t\t\t\t\t");
+                switch (calibrationPhase)
+                {
+                    case 0:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("Move your joystick around to detect input types.\n");
+                        Console.ForegroundColor = ConsoleColor.White;
+
+                        Console.WriteLine("Inputs detected: \n");
+                        for (int i = 0; i < allInputs.Count; i++)
+                            Console.WriteLine($"  {i + 1}. {allInputs[i].name} ->  {allInputs[i].cValue}\t\t\t\t\t\t\t");
+                        break;
+                    case 1:
+                        Console.WriteLine($"Set your joystick to its {calPositions[cCalPosIndex]} position, then press enter.");
+                        DrawAignmentMap();                                                
+                        break;
+                    case 2:
+                        Console.WriteLine($"Move your joystick around to test its configuration, then set it to its default (middle) position.");
+                        dotPos.X = (int)Math.Round(inputs["X axis"].GetPercent());
+                        dotPos.Y = (int)Math.Round(inputs["Y axis"].GetPercent());
+                        DrawAignmentMap();
+                        break;
+                    case 3:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("Move the joystick VERY slightly around to select its deadzone.\n");
+                        Console.ForegroundColor = ConsoleColor.White;
+
+                        foreach (var i in inputs)
+                            i.Value.UpdateDeadZone();
+                        break;
+                }
 
                 Console.WriteLine("\t\t\t\t\t\t\t\t\t\t\t\t");
                 foreach (var i in inputs)
                 {
-                    Console.Write($"{i.Key} axis: ");
+                    Console.Write($"{i.Key}: ");
                     Console.Write(i.Value == null ? "ignore" : $"{i.Value.name} -> {i.Value.cValue}");
                     Console.Write("\t\t\t\t\t\t\t\t\t\t\t\t\n");
                 }
 
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress the number of your {supportedInputs[cInputIndex]} axis (or press enter to ignore this axis)  ");
-                Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
-                Console.ForegroundColor = ConsoleColor.White;
+                switch (calibrationPhase)
+                {
+                    case 0:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress the number of your {supportedInputs[cInputIndex]} axis (or press enter to ignore this axis)  ");
+                        Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                    case 1:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to confirm.");
+                        Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                    case 2:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to proceed, or 'R' to reconfigure.");
+                        Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                }
 
-
+                
                 if (Console.KeyAvailable)
                 {
                     ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
@@ -286,17 +365,45 @@ namespace JoystickAxisPulsator
                         break;
                     else if ('1' <= consoleKeyInfo.KeyChar && consoleKeyInfo.KeyChar <= allInputs.Count.ToString()[0])
                     {
-                        inputs[supportedInputs[cInputIndex]] = allInputs[int.Parse(consoleKeyInfo.KeyChar.ToString()) - 1];
-                        cInputIndex++;
+                        switch (calibrationPhase)
+                        {
+                            case 0:
+                                inputs[supportedInputs[cInputIndex]] = allInputs[int.Parse(consoleKeyInfo.KeyChar.ToString()) - 1];
+                                cInputIndex++;
+                                break;
+                        }
                     }
                     else if (consoleKeyInfo.Key == ConsoleKey.Enter)
                     {
-                        inputs[supportedInputs[cInputIndex]] = null;
-                        cInputIndex++;
+                        switch (calibrationPhase)
+                        {
+                            case 0:
+                                inputs[supportedInputs[cInputIndex]] = null;
+                                cInputIndex++;
+                                break;
+                            case 1:
+                                if (cCalPosIndex == 0) {
+                                    inputs["X axis"].SetMin();
+                                    inputs["Y axis"].SetMin();
+                                }
+                                else
+                                {
+                                    inputs["X axis"].SetMax();
+                                    inputs["Y axis"].SetMax();
+                                }
+                                cCalPosIndex++;
+                                if (cCalPosIndex == calPositions.Length)
+                                    calibrationPhase++;
+                                break;
+                        }
                     }
 
-                    if (cInputIndex == supportedInputs.Length)
-                        break;
+                    if (calibrationPhase == 0 && cInputIndex == supportedInputs.Length)
+                    {
+                        calibrationPhase++;
+                        dotPos.X = 0;
+                        dotPos.Y = 0;
+                    }
                 }
 
                 Thread.Sleep(1000 / frequency);
