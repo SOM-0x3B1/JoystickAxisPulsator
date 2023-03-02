@@ -33,13 +33,14 @@ namespace JoystickAxisPulsator
 
         static void DrawAignmentMap()
         {
+            Console.WriteLine("\t\t\t\t\t\t\t\t\t\t\t\t");
             for (int y = 0; y < alignmentMap.Count; y++)
             {
                 for (int x = 0; x < alignmentMap[y].Length; x++)
                 {
-                    if (dotPos.X + 1 == x && dotPos.Y + 1 == y)
+                    if (dotPos.X + 7 == x && dotPos.Y + 2 == y)
                     {
-                        Console.BackgroundColor = ConsoleColor.Red;
+                        Console.BackgroundColor = ConsoleColor.DarkRed;
                         Console.Write("O");
                         Console.BackgroundColor = ConsoleColor.Black;
                     }
@@ -49,8 +50,10 @@ namespace JoystickAxisPulsator
                             Console.BackgroundColor = ConsoleColor.White;
                         Console.Write(alignmentMap[y][x]);
                         Console.BackgroundColor = ConsoleColor.Black;
-                    }
+                    }                    
                 }
+                Console.Write("\t\t\t\t");
+                Console.WriteLine();
             }
         }
 
@@ -62,6 +65,8 @@ namespace JoystickAxisPulsator
                 while (!r.EndOfStream)
                     alignmentMap.Add(r.ReadLine());
             }
+
+            Console.SetWindowSize(120, 35);
 
             ShowWarningPrompt();
 
@@ -268,7 +273,7 @@ namespace JoystickAxisPulsator
             List<Axis> allInputs = new List<Axis>();
             Dictionary<string, int> registeredInputs = new Dictionary<string, int>();
 
-            string[] supportedInputs = { "X axis", "Y axis", "Roll axis", "Panic buton" };
+            string[] supportedInputs = { "X axis", "Y axis", "Roll axis", "Pause button" };
             int cInputIndex = 0;
             Dictionary<string, Axis> inputs = new Dictionary<string, Axis>();
 
@@ -276,6 +281,9 @@ namespace JoystickAxisPulsator
             int cCalPosIndex = 0;
 
             int calibrationPhase = 0;
+
+
+            Console.CursorVisible = false;
 
             // Poll events from joystick
             while (true)
@@ -308,18 +316,20 @@ namespace JoystickAxisPulsator
                             Console.WriteLine($"  {i + 1}. {allInputs[i].name} ->  {allInputs[i].cValue}\t\t\t\t\t\t\t");
                         break;
                     case 1:
+                        Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"Set your joystick to its {calPositions[cCalPosIndex]} position, then press enter.");
-                        DrawAignmentMap();                                                
+                        Console.ForegroundColor = ConsoleColor.White;                                                                    
                         break;
                     case 2:
+                        Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"Move your joystick around to test its configuration, then set it to its default (middle) position.");
-                        dotPos.X = (int)Math.Round(inputs["X axis"].GetPercent());
-                        dotPos.Y = (int)Math.Round(inputs["Y axis"].GetPercent());
-                        DrawAignmentMap();
+                        Console.ForegroundColor = ConsoleColor.White;
+                        dotPos.X = (int)Math.Round(inputs["X axis"].GetPercent() * 31);
+                        dotPos.Y = (int)Math.Round(inputs["Y axis"].GetPercent() * 12);
                         break;
                     case 3:
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("Move the joystick VERY slightly around to select its deadzone.\n");
+                        Console.WriteLine("Move the joystick VERY slightly around to select its deadzone.");
                         Console.ForegroundColor = ConsoleColor.White;
 
                         foreach (var i in inputs)
@@ -339,17 +349,19 @@ namespace JoystickAxisPulsator
                 {
                     case 0:
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress the number of your {supportedInputs[cInputIndex]} axis (or press enter to ignore this axis)  ");
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress the number of your {supportedInputs[cInputIndex]} (or press enter to ignore it)  ");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
                     case 1:
+                        DrawAignmentMap();
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to confirm.");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
                     case 2:
+                        DrawAignmentMap();
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to proceed, or 'R' to reconfigure.");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
@@ -380,11 +392,19 @@ namespace JoystickAxisPulsator
                             case 0:
                                 inputs[supportedInputs[cInputIndex]] = null;
                                 cInputIndex++;
+                                if (cInputIndex == supportedInputs.Length)
+                                {
+                                    calibrationPhase++;
+                                    dotPos.X = 0;
+                                    dotPos.Y = 0;
+                                }
                                 break;
                             case 1:
                                 if (cCalPosIndex == 0) {
                                     inputs["X axis"].SetMin();
                                     inputs["Y axis"].SetMin();
+                                    dotPos.X = 31;
+                                    dotPos.Y = 12;
                                 }
                                 else
                                 {
@@ -397,18 +417,12 @@ namespace JoystickAxisPulsator
                                 break;
                         }
                     }
-
-                    if (calibrationPhase == 0 && cInputIndex == supportedInputs.Length)
-                    {
-                        calibrationPhase++;
-                        dotPos.X = 0;
-                        dotPos.Y = 0;
-                    }
                 }
 
                 Thread.Sleep(1000 / frequency);
             }
 
+            Console.CursorVisible = true;
 
             ShowMainMenu();
         }
