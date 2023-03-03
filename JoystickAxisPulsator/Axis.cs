@@ -16,6 +16,7 @@ namespace JoystickAxisPulsator
         public int middleValue;
         public int deadZoneRange = 0;
         public bool inverted = false;
+        public bool calibrated = false;
 
         public Axis(string name, int value) 
         { 
@@ -39,6 +40,7 @@ namespace JoystickAxisPulsator
                 maxValue = m;                
             }
             middleValue = (maxValue + minValue) / 2;
+            calibrated = true;
         }
 
 
@@ -51,9 +53,9 @@ namespace JoystickAxisPulsator
                 return result;
         }
 
-        public int GetDeadZoneSize(int screenWidth)
+        public int GetDeadZoneSize(int screenSize)
         {
-            return (int)((double)deadZoneRange / middleValue * screenWidth);
+            return (int)Math.Round((double)deadZoneRange / middleValue * ((double)screenSize / 2));
         }
     }
 }    

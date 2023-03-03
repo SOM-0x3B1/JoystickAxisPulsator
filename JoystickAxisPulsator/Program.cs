@@ -50,10 +50,10 @@ namespace JoystickAxisPulsator
                         if (alignmentMap[y][x] == '#')
                             Console.BackgroundColor = ConsoleColor.White;
 
-                        if((15 - inputX.GetDeadZoneSize(31) <= x || 15 + inputX.GetDeadZoneSize(31) >= x)
-                            && 6 - inputY.GetDeadZoneSize(12) <= y || 6 + inputY.GetDeadZoneSize(12) >= y)
+                        if((15 - inputX.GetDeadZoneSize(31) + 7 <= x && 15 + inputX.GetDeadZoneSize(31) + 7 >= x)
+                            && (6 - inputY.GetDeadZoneSize(12) + 2 <= y && 6 + inputY.GetDeadZoneSize(12) + 2 >= y))
                         {
-                            Console.BackgroundColor = ConsoleColor.Gray;
+                            Console.BackgroundColor = ConsoleColor.DarkGray;
                             Console.ForegroundColor = ConsoleColor.Black;
                         }
 
@@ -63,7 +63,7 @@ namespace JoystickAxisPulsator
 
                     }
                 }
-                Console.Write("\t\t\t\t");
+                Console.Write("\t\t\t\t\t\t\t");
                 Console.WriteLine();
             }
         }
@@ -341,9 +341,9 @@ namespace JoystickAxisPulsator
                         break;
                     case 3:
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("Move the joystick around VERY slightly to select its deadzone.");
+                        Console.WriteLine("Move the joystick around VERY slightly to select its dead zone.\t\t\t\t\t\t\t");
                         Console.ForegroundColor = ConsoleColor.White;
-                        dotPos.X = (int)Math.Round(inputX.GetPercent() * 12);
+                        dotPos.X = (int)Math.Round(inputX.GetPercent() * 31);
                         dotPos.Y = (int)Math.Round(inputY.GetPercent() * 12);
                         inputX.UpdateDeadZone();
                         inputY.UpdateDeadZone();
@@ -354,8 +354,19 @@ namespace JoystickAxisPulsator
                 foreach (var i in inputs)
                 {
                     Console.Write($"{i.Key}: ");
-                    Console.Write(i.Value == null ? "ignore" : $"{i.Value.name} -> {i.Value.cValue}");
-                    Console.Write("\t\t\t\t\t\t\t\t\t\t\t\t\n");
+                    if(i.Value == null)
+                        Console.Write("ignore");
+                    else
+                    {
+                        Console.Write($"{i.Value.name} -> {i.Value.cValue}");
+                        if (i.Value.calibrated) {
+                            Console.Write($"\t" +
+                                $"({Math.Round(i.Value.GetPercent() * 100, 1)}%)");
+                            if (i.Value.deadZoneRange > 0)
+                                Console.Write($"\tdeadzone: {i.Value.middleValue - i.Value.deadZoneRange} - {i.Value.middleValue + i.Value.deadZoneRange}");
+                        }
+                    }
+                    Console.WriteLine("\t\t\t\t");
                 }
 
                 switch (calibrationPhase)
@@ -377,6 +388,13 @@ namespace JoystickAxisPulsator
                         DrawAignmentMap();
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to proceed, or 'R' to reconfigure.");
+                        Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                    case 3:
+                        DrawAignmentMap();
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to proceed, or 'R' to reset deadzone.");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
@@ -430,6 +448,9 @@ namespace JoystickAxisPulsator
                                 cCalPosIndex++;
                                 if (cCalPosIndex == calPositions.Length)
                                     calibrationPhase++;
+                                break;
+                            case 2:
+                                calibrationPhase++;
                                 break;
                         }
                     }
