@@ -15,6 +15,7 @@ namespace JoystickAxisPulsator
         public int minValue;
         public int middleValue;
         public int deadZoneRange = 0;
+        public bool inverted = false;
 
         public Axis(string name, int value) 
         { 
@@ -28,9 +29,31 @@ namespace JoystickAxisPulsator
         }
 
         public void SetMin() { minValue = cValue; }
-        public void SetMax() { maxValue = cValue; }
+        public void SetMax() { 
+            maxValue = cValue; 
+            if(minValue > maxValue)
+            {
+                inverted = true;
+                int m = minValue;
+                minValue = maxValue;
+                maxValue = m;                
+            }
+            middleValue = (maxValue + minValue) / 2;
+        }
 
 
-        public double GetPercent() { return (double)cValue / maxValue - minValue; }
+        public double GetPercent()
+        {
+            double result = (double)cValue / maxValue - minValue;
+            if (inverted)
+                return 1 - result;
+            else
+                return result;
+        }
+
+        public int GetDeadZoneSize(int screenWidth)
+        {
+            return (int)((double)deadZoneRange / middleValue * screenWidth);
+        }
     }
 }    
