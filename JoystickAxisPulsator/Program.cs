@@ -17,13 +17,13 @@ namespace JoystickAxisPulsator
         private static Guid joystickGuid = Guid.Empty;
         private static Joystick joystick;
         private static string productName = "";
-        private static int frequency = 50;
+        private static int frequency = 20;
         private static List<string> alignmentMap = new List<string>();
         private static Coord dotPos = new Coord(0, 0);
         private static Axis inputX;
         private static Axis inputY;
 
-        public static int calibrationPhase = 0;
+        public static bool calibrationDone = false;
 
         static void DrawTitle()
         {
@@ -152,6 +152,7 @@ namespace JoystickAxisPulsator
 
             Console.WriteLine("Main menu\n");
 
+
             Console.Write("  1. Select gamepad/joystick");
             Console.ForegroundColor = ConsoleColor.DarkGray;
             if (joystickGuid == Guid.Empty)
@@ -160,12 +161,25 @@ namespace JoystickAxisPulsator
                 Console.WriteLine($"  [{productName}]");
             Console.ForegroundColor = ConsoleColor.White;
 
-            Console.WriteLine("  2. Calibrate device");
+
+            Console.Write("  2. Calibrate device");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            if (calibrationDone)
+                Console.WriteLine($"         [done]");
+            else
+                Console.WriteLine($"         [!]");
+            Console.ForegroundColor = ConsoleColor.White;
+
+
             Console.WriteLine("  3. Select target window");
+
+
             Console.Write("  4. Select pulse frequency");
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine($"   [{frequency} Hz]");
             Console.ForegroundColor = ConsoleColor.White;
+
+
             Console.WriteLine("  5. Start pulsing");
 
 
@@ -294,11 +308,13 @@ namespace JoystickAxisPulsator
             string[] calPositions = { "front left", "back right" };
             int cCalPosIndex = 0;
 
+            int calibrationPhase = 0;
+            calibrationDone = false;
 
             Console.CursorVisible = false;
 
             // Poll events from joystick
-            while (true)
+            while (!calibrationDone)
             {
                 joystick.Poll();
                 JoystickUpdate[] datas = joystick.GetBufferedData();
@@ -360,10 +376,11 @@ namespace JoystickAxisPulsator
                     {
                         Console.Write($"{i.Value.name} -> {i.Value.cValue}");
                         if (i.Value.calibrated) {
-                            Console.Write($"\t" +
-                                $"({Math.Round(i.Value.GetPercent() * 100, 1)}%)");
+                            Console.Write($"\t({Math.Round(i.Value.GetPercent() * 100, 1)}%)");
                             if (i.Value.deadZoneRange > 0)
                                 Console.Write($"\tdeadzone: {i.Value.middleValue - i.Value.deadZoneRange} - {i.Value.middleValue + i.Value.deadZoneRange}\t({Math.Round((double)i.Value.deadZoneRange / i.Value.middleValue * 100, 1)}%)");
+                            else
+                                Console.Write("\t\t\t");
                         }
                     }
                     Console.WriteLine("\t\t\t\t");
@@ -394,7 +411,7 @@ namespace JoystickAxisPulsator
                     case 3:
                         DrawAignmentMap();
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to proceed, or 'R' to reset dead zone.");
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to conclude calibration, or 'R' to reset dead zone.");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
@@ -413,6 +430,27 @@ namespace JoystickAxisPulsator
                             case 0:
                                 inputs[supportedInputs[cInputIndex]] = allInputs[int.Parse(consoleKeyInfo.KeyChar.ToString()) - 1];
                                 cInputIndex++;
+                                break;
+                        }
+                    }
+                    else if (consoleKeyInfo.Key == ConsoleKey.R)
+                    {
+                        switch (calibrationPhase)
+                        {
+                            case 2:
+                                calibrationPhase = 0;
+                                cCalPosIndex = 0;
+                                cInputIndex = 0;
+                                inputs.Clear();
+                                inputX.calibrated = false;
+                                inputY.calibrated = false;
+
+                                Console.Clear();
+                                DrawTitle();
+                                break;
+                            case 3:
+                                inputX.deadZoneRange = 0;
+                                inputY.deadZoneRange = 0;                                
                                 break;
                         }
                     }
@@ -452,6 +490,10 @@ namespace JoystickAxisPulsator
                             case 2:
                                 calibrationPhase++;
                                 break;
+                            case 3:
+                                calibrationPhase++;
+                                calibrationDone = true;
+                                break;
                         }
                     }
                 }
@@ -471,23 +513,24 @@ namespace JoystickAxisPulsator
 
             Console.WriteLine("Select frequency\n");
 
-            Console.WriteLine("  1. 10  Hz \t (low precision; high stability)");
-            Console.WriteLine("  2. 20  Hz");
-            Console.WriteLine("  3. 50  Hz");
-            Console.WriteLine("  4. 100 Hz \t (high precision; low stability)");
+            Console.WriteLine("  1. 5   Hz \t (low precision; high stability)");
+            Console.WriteLine("  2. 10  Hz");
+            Console.WriteLine("  3. 20  Hz");
+            Console.WriteLine("  4. 50  Hz");
+            Console.WriteLine("  5. 100 Hz \t (high precision; low stability)");
 
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("\nChoose your frequency (1-4): ");
+            Console.Write("\nChoose your frequency (1-5): ");
             Console.ForegroundColor = ConsoleColor.White;
 
             int id = int.Parse(Console.ReadLine());
-            while (id < 1 || id > 4)
+            while (id < 1 || id > 5)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\nInvalid id. Please enter a valid number (1-4).");
+                Console.WriteLine("\nInvalid id. Please enter a valid number (1-5).");
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("\nChoose your frequency (1-4): ");
+                Console.Write("\nChoose your frequency (1-5): ");
                 Console.ForegroundColor = ConsoleColor.White;
 
                 id = int.Parse(Console.ReadLine());
@@ -496,15 +539,18 @@ namespace JoystickAxisPulsator
             switch (id)
             {
                 case 1:
-                    frequency = 10;
+                    frequency = 5;
                     break;
                 case 2:
-                    frequency = 20;
+                    frequency = 10;
                     break;
                 case 3:
-                    frequency = 50;
+                    frequency = 20;
                     break;
                 case 4:
+                    frequency = 50;
+                    break;
+                case 5:
                     frequency = 100;
                     break;
             }
