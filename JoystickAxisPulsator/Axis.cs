@@ -46,7 +46,11 @@ namespace JoystickAxisPulsator
 
         public double GetPercent()
         {
-            double result = (double)cValue / maxValue - minValue;
+            double result = 0.5;
+
+            if (deadZoneRange == 0 || Program.calibrationPhase < 4 || cValue < middleValue - deadZoneRange || cValue > middleValue + deadZoneRange)
+                result = (double)cValue / maxValue - minValue;
+
             if (inverted)
                 return 1 - result;
             else

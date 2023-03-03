@@ -23,6 +23,8 @@ namespace JoystickAxisPulsator
         private static Axis inputX;
         private static Axis inputY;
 
+        public static int calibrationPhase = 0;
+
         static void DrawTitle()
         {
             Console.ForegroundColor = ConsoleColor.White;
@@ -292,8 +294,6 @@ namespace JoystickAxisPulsator
             string[] calPositions = { "front left", "back right" };
             int cCalPosIndex = 0;
 
-            int calibrationPhase = 0;
-
 
             Console.CursorVisible = false;
 
@@ -336,14 +336,14 @@ namespace JoystickAxisPulsator
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"Move your joystick around to test its configuration, then set it to its default (middle) position.");
                         Console.ForegroundColor = ConsoleColor.White;
-                        dotPos.X = (int)Math.Round(inputX.GetPercent() * 31);
+                        dotPos.X = (int)(inputX.GetPercent() * 31);
                         dotPos.Y = (int)Math.Round(inputY.GetPercent() * 12);
                         break;
                     case 3:
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine("Move the joystick around VERY slightly to select its dead zone.\t\t\t\t\t\t\t");
                         Console.ForegroundColor = ConsoleColor.White;
-                        dotPos.X = (int)Math.Round(inputX.GetPercent() * 31);
+                        dotPos.X = (int)(inputX.GetPercent() * 31);
                         dotPos.Y = (int)Math.Round(inputY.GetPercent() * 12);
                         inputX.UpdateDeadZone();
                         inputY.UpdateDeadZone();
@@ -363,7 +363,7 @@ namespace JoystickAxisPulsator
                             Console.Write($"\t" +
                                 $"({Math.Round(i.Value.GetPercent() * 100, 1)}%)");
                             if (i.Value.deadZoneRange > 0)
-                                Console.Write($"\tdeadzone: {i.Value.middleValue - i.Value.deadZoneRange} - {i.Value.middleValue + i.Value.deadZoneRange}");
+                                Console.Write($"\tdeadzone: {i.Value.middleValue - i.Value.deadZoneRange} - {i.Value.middleValue + i.Value.deadZoneRange}\t({Math.Round((double)i.Value.deadZoneRange / i.Value.middleValue * 100, 1)}%)");
                         }
                     }
                     Console.WriteLine("\t\t\t\t");
@@ -394,7 +394,7 @@ namespace JoystickAxisPulsator
                     case 3:
                         DrawAignmentMap();
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to proceed, or 'R' to reset deadzone.");
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to proceed, or 'R' to reset dead zone.");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
