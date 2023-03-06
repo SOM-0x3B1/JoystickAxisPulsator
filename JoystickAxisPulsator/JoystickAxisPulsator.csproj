@@ -72,7 +72,6 @@
   <ItemGroup>
     <Compile Include="Axis.cs" />
     <Compile Include="Coord.cs" />
-    <Compile Include="KeyManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
