@@ -20,8 +20,10 @@ namespace JoystickAxisPulsator
         private static int frequency = 20;
         private static List<string> alignmentMap = new List<string>();
         private static Coord dotPos = new Coord(0, 0);
+        private static int zDotPos = 0;
         private static Axis inputX;
         private static Axis inputY;
+        private static Axis inputZ;
 
         public static bool calibrationDone = false;
 
@@ -305,7 +307,7 @@ namespace JoystickAxisPulsator
             int cInputIndex = 0;
             Dictionary<string, Axis> inputs = new Dictionary<string, Axis>();
 
-            string[] calPositions = { "front left", "back right" };
+            string[] calPositions = { "front left", "back right", "twist/second joystick left right" };
             int cCalPosIndex = 0;
 
             int calibrationPhase = 0;
@@ -354,6 +356,8 @@ namespace JoystickAxisPulsator
                         Console.ForegroundColor = ConsoleColor.White;
                         dotPos.X = (int)(inputX.GetPercent() * 31);
                         dotPos.Y = (int)Math.Round(inputY.GetPercent() * 12);
+                        if(inputZ != null)
+                            zDotPos = (int)(inputZ.GetPercent() * 31);
                         break;
                     case 3:
                         Console.ForegroundColor = ConsoleColor.Green;
@@ -361,8 +365,12 @@ namespace JoystickAxisPulsator
                         Console.ForegroundColor = ConsoleColor.White;
                         dotPos.X = (int)(inputX.GetPercent() * 31);
                         dotPos.Y = (int)Math.Round(inputY.GetPercent() * 12);
+                        if (inputZ != null)
+                            zDotPos = (int)(inputZ.GetPercent() * 31);
                         inputX.UpdateDeadZone();
                         inputY.UpdateDeadZone();
+                        if (inputZ != null)
+                            inputZ.UpdateDeadZone();
                         break;
                 }
 
@@ -444,13 +452,17 @@ namespace JoystickAxisPulsator
                                 inputs.Clear();
                                 inputX.calibrated = false;
                                 inputY.calibrated = false;
+                                if (inputZ != null)
+                                    inputZ.calibrated = false;
 
                                 Console.Clear();
                                 DrawTitle();
                                 break;
                             case 3:
                                 inputX.deadZoneRange = 0;
-                                inputY.deadZoneRange = 0;                                
+                                inputY.deadZoneRange = 0;
+                                if (inputZ != null)
+                                    inputZ.deadZoneRange = 0;                                                                
                                 break;
                         }
                     }
@@ -466,23 +478,41 @@ namespace JoystickAxisPulsator
                                     calibrationPhase++;
                                     dotPos.X = 0;
                                     dotPos.Y = 0;
+                                    if (inputZ != null)
+                                        zDotPos = 0;
 
                                     inputX = inputs["X axis"];
                                     inputY = inputs["Y axis"];
+                                    inputZ = inputs["Z axis"];
                                 }
                                 break;
                             case 1:
-                                if (cCalPosIndex == 0) {
-                                    inputX.SetMin();
-                                    inputY.SetMin();
-                                    dotPos.X = 31;
-                                    dotPos.Y = 12;
-                                }
-                                else
+                                switch (cCalPosIndex)
                                 {
-                                    inputX.SetMax();
-                                    inputY.SetMax();
+                                    case 0:
+                                        inputX.SetMin();
+                                        inputY.SetMin();
+                                        dotPos.X = 31;
+                                        dotPos.Y = 12;
+                                        break;
+                                    case 1:
+                                        inputX.SetMax();
+                                        inputY.SetMax();
+                                        break;
+                                    case 2:
+                                        if (inputZ != null)
+                                        {
+                                            inputZ.SetMin();
+                                            zDotPos = 31;
+                                        }
+                                        else
+                                            cCalPosIndex = 3;
+                                        break;
+                                    case 3:
+                                        inputZ.SetMax();
+                                        break;
                                 }
+
                                 cCalPosIndex++;
                                 if (cCalPosIndex == calPositions.Length)
                                     calibrationPhase++;
