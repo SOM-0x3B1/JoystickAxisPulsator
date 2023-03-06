@@ -1,11 +1,15 @@
 ﻿using SharpDX.DirectInput;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using WindowsInput.Native;
+using WindowsInput;
 
 namespace JoystickAxisPulsator
 {
@@ -24,6 +28,55 @@ namespace JoystickAxisPulsator
         private static Axis inputY;
 
         public static bool calibrationDone = false;
+
+
+        [DllImport("User32.dll")]
+        static extern int SetForegroundWindow(IntPtr point);
+        /*[DllImport("user32.dll")]
+        public static extern int FindWindow(string lpClassName, string lpWindowName);
+        [DllImport("user32.dll")]
+        static extern bool PostMessage(IntPtr hWnd, UInt32 Msg, int wParam, int lParam);
+        const UInt32 WM_KEYDOWN = 0x0100;
+        const UInt32 WM_KEYUP = 0x101;*/
+
+
+        [STAThread]
+        static void Main(string[] args)
+        {
+            using (StreamReader r = new StreamReader("indicator.txt", Encoding.Default))
+            {
+                while (!r.EndOfStream)
+                    alignmentMap.Add(r.ReadLine());
+            }
+
+            Console.SetWindowSize(120, 35);
+
+            ShowWarningPrompt();
+
+            gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
+            joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
+
+            if (gamepads.Count > 0)
+            {
+                joystickGuid = gamepads[0].ProductGuid;
+                productName = gamepads[0].ProductName;
+            }
+            else if (joysticks.Count > 0)
+            {
+                joystickGuid = joysticks[0].ProductGuid;
+                productName = joysticks[0].ProductName;
+            }
+
+            if (joystickGuid != Guid.Empty)
+            {
+                joystick = new Joystick(directInput, joystickGuid);
+                joystick.Properties.BufferSize = 128;
+                joystick.Acquire();
+            }
+
+            ShowMainMenu();
+        }
+
 
         static void DrawTitle()
         {
@@ -52,7 +105,7 @@ namespace JoystickAxisPulsator
                         if (alignmentMap[y][x] == '#')
                             Console.BackgroundColor = ConsoleColor.White;
 
-                        if((15 - inputX.GetDeadZoneSize(31) + 7 <= x && 15 + inputX.GetDeadZoneSize(31) + 7 >= x)
+                        if ((15 - inputX.GetDeadZoneSize(31) + 7 <= x && 15 + inputX.GetDeadZoneSize(31) + 7 >= x)
                             && (6 - inputY.GetDeadZoneSize(12) + 2 <= y && 6 + inputY.GetDeadZoneSize(12) + 2 >= y))
                         {
                             Console.BackgroundColor = ConsoleColor.DarkGray;
@@ -68,43 +121,6 @@ namespace JoystickAxisPulsator
                 Console.Write("\t\t\t\t\t\t\t");
                 Console.WriteLine();
             }
-        }
-
-
-        static void Main(string[] args)
-        {
-            using (StreamReader r = new StreamReader("indicator.txt", Encoding.Default))
-            {
-                while (!r.EndOfStream)
-                    alignmentMap.Add(r.ReadLine());
-            }
-
-            Console.SetWindowSize(120, 35);
-
-            ShowWarningPrompt();
-
-            gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
-            joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
-
-            if (gamepads.Count > 0)
-            {
-                joystickGuid = gamepads[0].ProductGuid;
-                productName = gamepads[0].ProductName;           
-            }
-            else if(joysticks.Count > 0)
-            {
-                joystickGuid = joysticks[0].ProductGuid;
-                productName = joysticks[0].ProductName;
-            }
-
-            if (joystickGuid != Guid.Empty)
-            {
-                joystick = new Joystick(directInput, joystickGuid);
-                joystick.Properties.BufferSize = 128;
-                joystick.Acquire();
-            }
-
-            ShowMainMenu();  
         }
 
         static void ShowWarningPrompt()
@@ -165,9 +181,8 @@ namespace JoystickAxisPulsator
             Console.Write("  2. Calibrate device");
             Console.ForegroundColor = ConsoleColor.DarkGray;
             if (calibrationDone)
-                Console.WriteLine($"         [done]");
-            else
-                Console.WriteLine($"         [!]");
+                Console.Write($"         [done]");
+            Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.White;
 
 
@@ -188,7 +203,7 @@ namespace JoystickAxisPulsator
             Console.ForegroundColor = ConsoleColor.White;
 
             int id = int.Parse(Console.ReadLine());
-            while(id < 1 || id > 5)
+            while (id < 1 || id > 5)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("\nInvalid id. Please enter a valid number (1-4).");
@@ -207,11 +222,17 @@ namespace JoystickAxisPulsator
                 case 2:
                     CalibrateDevice();
                     break;
+                case 3:
+                    SelectWindow();
+                    break;
                 case 4:
                     SelectFrequency();
                     break;
+                case 5:
+                    StartPulsing();
+                    break;
                 default:
-                    ShowMainMenu(); 
+                    ShowMainMenu();
                     break;
             }
         }
@@ -245,7 +266,7 @@ namespace JoystickAxisPulsator
             Console.WriteLine("\nDevices found:");
 
             Console.WriteLine("\n  Gamepads:");
-            
+
             for (int i = 0; i < gamepads.Count; i++)
                 Console.WriteLine($"\t{i + 1}. {gamepads[i].ProductName}");
             if (gamepads.Count == 0)
@@ -301,7 +322,7 @@ namespace JoystickAxisPulsator
             Dictionary<string, int> registeredInputs = new Dictionary<string, int>();
 
             string[] supportedInputs = { "X axis", "Y axis", "Z axis", "Pause button" };
-            string[] sIInfos = { "left-right", "front-back", "if you can twist your joystick", "toggles the pulses" };
+            string[] sIInfos = { "left-right", "front-back", "if you can twist the joystick, or have 2 of them", "toggles the pulses" };
             int cInputIndex = 0;
             Dictionary<string, Axis> inputs = new Dictionary<string, Axis>();
 
@@ -346,7 +367,7 @@ namespace JoystickAxisPulsator
                     case 1:
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"Set your joystick to its {calPositions[cCalPosIndex]} position, then press enter.");
-                        Console.ForegroundColor = ConsoleColor.White;                                                                    
+                        Console.ForegroundColor = ConsoleColor.White;
                         break;
                     case 2:
                         Console.ForegroundColor = ConsoleColor.Green;
@@ -370,7 +391,7 @@ namespace JoystickAxisPulsator
                 foreach (var i in inputs)
                 {
                     Console.Write($"{i.Key}: ");
-                    if(i.Value == null)
+                    if (i.Value == null)
                         Console.Write("ignore");
                     else
                     {
@@ -417,7 +438,7 @@ namespace JoystickAxisPulsator
                         break;
                 }
 
-                
+
                 if (Console.KeyAvailable)
                 {
                     ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
@@ -450,7 +471,7 @@ namespace JoystickAxisPulsator
                                 break;
                             case 3:
                                 inputX.deadZoneRange = 0;
-                                inputY.deadZoneRange = 0;                                
+                                inputY.deadZoneRange = 0;
                                 break;
                         }
                     }
@@ -506,6 +527,11 @@ namespace JoystickAxisPulsator
             ShowMainMenu();
         }
 
+        static void SelectWindow()
+        {
+
+        }
+
         static void SelectFrequency()
         {
             Console.Clear();
@@ -556,6 +582,19 @@ namespace JoystickAxisPulsator
             }
 
             ShowMainMenu();
+        }
+
+        static void StartPulsing()
+        {
+            InputSimulator inputSimulator = new InputSimulator();
+            int delay = 1000 / frequency;
+            while (true)
+            {
+                inputSimulator.Keyboard.KeyDown(VirtualKeyCode.VK_L);
+                Thread.Sleep(delay);
+                inputSimulator.Keyboard.KeyUp(VirtualKeyCode.VK_L);
+                Thread.Sleep(delay);
+            }
         }
     }
 }
