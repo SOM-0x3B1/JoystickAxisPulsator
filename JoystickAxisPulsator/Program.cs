@@ -207,7 +207,16 @@ namespace JoystickAxisPulsator
                     SelectJoystick();
                     break;
                 case 2:
-                    CalibrateDevice();
+                    if (joystick != null)
+                        CalibrateDevice();
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("No gamepad/joystick found.");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Thread.Sleep(500);
+                        ShowMainMenu();
+                    }
                     break;
                 case 4:
                     SelectFrequency();
