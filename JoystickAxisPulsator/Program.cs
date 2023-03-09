@@ -28,6 +28,7 @@ namespace JoystickAxisPulsator
         private static Axis inputX;
         private static Axis inputY;
         private static Axis inputZ;
+        private static InputSimulator inputSimulator = new InputSimulator();
 
         public static bool calibrationDone = false;
 
@@ -96,7 +97,7 @@ namespace JoystickAxisPulsator
             {
                 for (int x = 0; x < alignmentMap[y].Length; x++)
                 {
-                    if (dotPos.X + 7 == x && dotPos.Y + 2 == y)
+                    if (dotPos.X + 7 == x && dotPos.Y + 2 == y || (inputY != null && y == 20 && zDotPos + 7 == x))
                     {
                         Console.BackgroundColor = ConsoleColor.DarkRed;
                         Console.Write("O");
@@ -133,7 +134,7 @@ namespace JoystickAxisPulsator
             Console.Write("Warning: ");
             Console.ForegroundColor = ConsoleColor.White;
             Console.Write("The program will read the axis values of the selected joystick, \n" +
-                "and output an alternating pulse of emulated keypresses to a selected window. \n" +
+                "and output an alternating pulse of emulated keypresses to your computer. \n" +
                 "Since the app will spam these presses at a very high rate,");
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(" they may cause some \n" +
@@ -384,19 +385,19 @@ namespace JoystickAxisPulsator
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"Move your joystick around to test its configuration, then set it to its default (middle) position.");
                         Console.ForegroundColor = ConsoleColor.White;
-                        dotPos.X = (int)(inputX.GetPercent() * 31);
-                        dotPos.Y = (int)Math.Round(inputY.GetPercent() * 12);
+                        dotPos.X = (int)(inputX.GetRatio() * 31);
+                        dotPos.Y = (int)Math.Round(inputY.GetRatio() * 12);
                         if(inputZ != null)
-                            zDotPos = (int)(inputZ.GetPercent() * 31);
+                            zDotPos = (int)(inputZ.GetRatio() * 31);
                         break;
                     case 3:
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine("Move the joystick around VERY slightly to select its dead zone.\t\t\t\t\t\t\t");
                         Console.ForegroundColor = ConsoleColor.White;
-                        dotPos.X = (int)(inputX.GetPercent() * 31);
-                        dotPos.Y = (int)Math.Round(inputY.GetPercent() * 12);
+                        dotPos.X = (int)(inputX.GetRatio() * 31);
+                        dotPos.Y = (int)Math.Round(inputY.GetRatio() * 12);
                         if (inputZ != null)
-                            zDotPos = (int)(inputZ.GetPercent() * 31);
+                            zDotPos = (int)(inputZ.GetRatio() * 31);
                         inputX.UpdateDeadZone();
                         inputY.UpdateDeadZone();
                         if (inputZ != null)
@@ -414,7 +415,7 @@ namespace JoystickAxisPulsator
                     {
                         Console.Write($"{i.Value.name} -> {i.Value.cValue}");
                         if (i.Value.calibrated) {
-                            Console.Write($"\t({Math.Round(i.Value.GetPercent() * 100, 1)}%)");
+                            Console.Write($"\t({Math.Round(i.Value.GetRatio() * 100, 1)}%)");
                             if (i.Value.deadZoneRange > 0)
                                 Console.Write($"\tdeadzone: {i.Value.middleValue - i.Value.deadZoneRange} - {i.Value.middleValue + i.Value.deadZoneRange}\t({Math.Round((double)i.Value.deadZoneRange / i.Value.middleValue * 100, 1)}%)");
                             else
@@ -578,11 +579,11 @@ namespace JoystickAxisPulsator
 
             Console.WriteLine("Select frequency\n");
 
-            Console.WriteLine("  1. 5   Hz \t (low precision; high stability)");
-            Console.WriteLine("  2. 10  Hz");
-            Console.WriteLine("  3. 20  Hz");
-            Console.WriteLine("  4. 50  Hz");
-            Console.WriteLine("  5. 100 Hz \t (high precision; low stability)");
+            Console.WriteLine("  1. 5   Hz   precision: ultra     (0.5%);  stability: low");
+            Console.WriteLine("  2. 10  Hz   precision: very high (1%);    stability: medium");
+            Console.WriteLine("  3. 20  Hz   precision: high      (2%);    stability: high"); 
+            Console.WriteLine("  4. 50  Hz   precision: medium    (5%);    stability: ?");
+            Console.WriteLine("  5. 100 Hz   precision: low       (10%);   stability: ?");
 
 
             Console.ForegroundColor = ConsoleColor.Green;
@@ -625,14 +626,62 @@ namespace JoystickAxisPulsator
 
         static void StartPulsing()
         {
-            InputSimulator inputSimulator = new InputSimulator();
-            int delay = 1000 / frequency;
+            Task.Run(() => { Pulser(inputX); });
+            Task.Run(() => { Pulser(inputY); });
+            Task.Run(() => { Pulser(inputZ); });
+        }
+
+        static void Pulser(Axis axis)
+        {
+            int baseDelay = 1000 / frequency;
+            VirtualKeyCode cKey = VirtualKeyCode.VK_0; 
+
             while (true)
             {
-                inputSimulator.Keyboard.KeyDown(VirtualKeyCode.VK_L);
-                Thread.Sleep(delay);
-                inputSimulator.Keyboard.KeyUp(VirtualKeyCode.VK_L);
-                Thread.Sleep(delay);
+                double ratio = axis.GetRatio();
+                int onDuration;
+
+                if (ratio != 0.5)
+                {
+                    if (ratio < 0.5)
+                    {
+                        onDuration = (int)Math.Round(baseDelay * (0.5 - ratio) * 2);
+                        switch (axis.role)
+                        {
+                            case Axis.AxisRole.yaw:
+                                cKey = VirtualKeyCode.VK_A;
+                                break;
+                            case Axis.AxisRole.pitch:
+                                cKey = VirtualKeyCode.VK_W;
+                                break;
+                            case Axis.AxisRole.roll:
+                                cKey = VirtualKeyCode.VK_Q;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        onDuration = (int)Math.Round(baseDelay * (ratio - 0.5) * 2);
+                        switch (axis.role)
+                        {
+                            case Axis.AxisRole.yaw:
+                                cKey = VirtualKeyCode.VK_D;
+                                break;
+                            case Axis.AxisRole.pitch:
+                                cKey = VirtualKeyCode.VK_S;
+                                break;
+                            case Axis.AxisRole.roll:
+                                cKey = VirtualKeyCode.VK_E;
+                                break;
+                        }
+                    }
+                    inputSimulator.Keyboard.KeyDown(cKey);
+                    Thread.Sleep(onDuration);
+                    inputSimulator.Keyboard.KeyUp(cKey);
+                    Thread.Sleep(baseDelay - onDuration);
+                }
+                else
+                    Thread.Sleep(baseDelay);
             }
         }
     }

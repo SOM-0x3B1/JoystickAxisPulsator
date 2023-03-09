@@ -10,6 +10,7 @@ namespace JoystickAxisPulsator
     public class Axis
     {
         public string name;
+        public AxisRole role;
         public int cValue;
         public int maxValue;
         public int minValue;
@@ -17,6 +18,8 @@ namespace JoystickAxisPulsator
         public int deadZoneRange = 0;
         public bool inverted = false;
         public bool calibrated = false;
+
+        public enum AxisRole { yaw, pitch, roll }
 
         public Axis(string name, int value) 
         { 
@@ -44,7 +47,7 @@ namespace JoystickAxisPulsator
         }
 
 
-        public double GetPercent()
+        public double GetRatio()
         {
             double result = 0.5;
 
