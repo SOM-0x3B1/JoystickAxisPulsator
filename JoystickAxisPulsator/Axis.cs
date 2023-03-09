@@ -21,6 +21,7 @@ namespace JoystickAxisPulsator
 
         public enum AxisRole { yaw, pitch, roll }
 
+
         public Axis(string name, int value) 
         { 
             this.name = name;
