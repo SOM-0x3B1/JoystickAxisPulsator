@@ -752,7 +752,10 @@ namespace JoystickAxisPulsator
                         switch (axis.role)
                         {
                             case Axis.AxisRole.yaw:
-                                cKey = VirtualKeyCode.VK_D;
+                                if(controlScheme == "rocket")
+                                    cKey = VirtualKeyCode.VK_D;
+                                else
+                                    cKey = VirtualKeyCode.VK_A;
                                 break;
                             case Axis.AxisRole.pitch:
                                 cKey = VirtualKeyCode.VK_W;
@@ -768,7 +771,10 @@ namespace JoystickAxisPulsator
                         switch (axis.role)
                         {
                             case Axis.AxisRole.yaw:
-                                cKey = VirtualKeyCode.VK_A;
+                                if (controlScheme == "rocket")
+                                    cKey = VirtualKeyCode.VK_A;
+                                else
+                                    cKey = VirtualKeyCode.VK_D;
                                 break;
                             case Axis.AxisRole.pitch:
                                 cKey = VirtualKeyCode.VK_S;
