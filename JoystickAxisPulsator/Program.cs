@@ -29,6 +29,7 @@ namespace JoystickAxisPulsator
         private static Axis inputY;
         private static Axis inputZ;
         private static InputSimulator inputSimulator = new InputSimulator();
+        private static string controlScheme = "";
 
         public static bool calibrationDone = false;
 
@@ -46,6 +47,8 @@ namespace JoystickAxisPulsator
         [STAThread]
         static void Main(string[] args)
         {
+            Console.Title = "Joystick Axis Pulsator";
+
             using (StreamReader r = new StreamReader("indicator.txt", Encoding.Default))
             {
                 while (!r.EndOfStream)
@@ -84,10 +87,10 @@ namespace JoystickAxisPulsator
         static void DrawTitle()
         {
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("====================================");
-            Console.WriteLine("||   Joystick Axis Pulsator v0.1  ||");
-            Console.WriteLine("||        by SOM-0x3B1            ||");
-            Console.WriteLine("====================================\n");
+            Console.WriteLine(" ====================================");
+            Console.WriteLine(" ||   Joystick Axis Pulsator v0.1  ||");
+            Console.WriteLine(" ||        by SOM-0x3B1            ||");
+            Console.WriteLine(" ====================================\n");
         }
 
         static void DrawAignmentMap()
@@ -132,31 +135,31 @@ namespace JoystickAxisPulsator
             DrawTitle();
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("Warning: ");
+            Console.Write(" Warning: ");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("The program will read the axis values of the selected joystick, \n" +
-                "and output an alternating pulse of emulated keypresses to your computer. \n" +
-                "Since the app will spam these presses at a very high rate,");
+            Console.Write(" The program will read the axis values of the selected joystick, \n" +
+                " and output an alternating pulse of emulated keypresses to your computer. \n" +
+                " Since the app will spam these presses at a very high rate,");
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(" they may cause some \n" +
-                "unexpected issues with your applications and system.");
+                " unexpected issues with your applications and system.");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("\nBy accepting the following prompt, you acknowledge that I (SOM-0x3B1) do not\n" +
-                "take responsibility for (but will gladly help with) any problems that this \n" +
-                "software might cause. \n\n" +
-                "Use this software at your own risk.");
+            Console.WriteLine("\n By accepting the following prompt, you acknowledge that I (SOM-0x3B1) do not\n" +
+                " take responsibility for (but will gladly help with) any problems that this \n" +
+                " software might cause. \n\n" +
+                " Use this software at your own risk.");
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("\n\nDo you accept these terms? [Y/N]: ");
+            Console.Write("\n\n Do you accept these terms? [Y/N]: ");
             Console.ForegroundColor = ConsoleColor.White;
 
             string input = Console.ReadLine().ToLower();
             while (input != "n" && input != "y")
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\nInvalid format. Please use 'Y' or 'N'.");
+                Console.WriteLine("\n Invalid format. Please use 'Y' or 'N'.");
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("Do you accept these terms? [Y/N]: ");
+                Console.Write(" Do you accept these terms? [Y/N]: ");
                 Console.ForegroundColor = ConsoleColor.White;
 
                 input = Console.ReadLine().ToLower();
@@ -170,10 +173,10 @@ namespace JoystickAxisPulsator
             Console.Clear();
             DrawTitle();
 
-            Console.WriteLine("Main menu\n");
+            Console.WriteLine(" Main menu\n");
 
 
-            Console.Write("  1. Select gamepad/joystick");
+            Console.Write("   1. Select gamepad/joystick");
             Console.ForegroundColor = ConsoleColor.DarkGray;
             if (joystickGuid == Guid.Empty)
                 Console.WriteLine($"  [none]");
@@ -182,7 +185,7 @@ namespace JoystickAxisPulsator
             Console.ForegroundColor = ConsoleColor.White;
 
 
-            Console.Write("  2. Calibrate device");
+            Console.Write("   2. Calibrate device");
             Console.ForegroundColor = ConsoleColor.DarkGray;
             if (calibrationDone)
                 Console.Write($"         [done]");
@@ -190,29 +193,34 @@ namespace JoystickAxisPulsator
             Console.ForegroundColor = ConsoleColor.White;
 
 
-            Console.WriteLine("  3. Select control scheme");
+            Console.Write("   3. Select control scheme");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            if(controlScheme != "")
+                Console.Write($"    [{controlScheme}]");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
 
 
-            Console.Write("  4. Select pulse frequency");
+            Console.Write("   4. Select pulse frequency");
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine($"   [{frequency} Hz]");
             Console.ForegroundColor = ConsoleColor.White;
 
 
-            Console.WriteLine("  5. Start pulsing");
+            Console.WriteLine("   5. Start pulsing");
 
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("\nWhat would you like to do? (1-5): ");
+            Console.Write("\n What would you like to do? (1-5): ");
             Console.ForegroundColor = ConsoleColor.White;
 
             int id = int.Parse(Console.ReadLine());
             while (id < 1 || id > 5)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\nInvalid id. Please enter a valid number (1-4).");
+                Console.WriteLine("\n Invalid id. Please enter a valid number (1-4).");
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("\nWhat would you like to do? (1-5): ");
+                Console.Write("\n What would you like to do? (1-5): ");
                 Console.ForegroundColor = ConsoleColor.White;
 
                 id = int.Parse(Console.ReadLine());
@@ -229,7 +237,7 @@ namespace JoystickAxisPulsator
                     else
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("No gamepad/joystick found.");
+                        Console.WriteLine(" No gamepad/joystick found.");
                         Console.ForegroundColor = ConsoleColor.White;
                         Thread.Sleep(500);
                         ShowMainMenu();
@@ -255,7 +263,7 @@ namespace JoystickAxisPulsator
             Console.Clear();
             DrawTitle();
 
-            Console.WriteLine("\nSearching for compatible devices...");
+            Console.WriteLine("\n Searching for compatible devices...");
 
             joystickGuid = Guid.Empty;
             gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
@@ -265,27 +273,27 @@ namespace JoystickAxisPulsator
             while (gamepads.Count + joysticks.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("No gamepad/joystick found.");
+                Console.WriteLine(" No gamepad/joystick found.");
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("Press enter to retry.");
+                Console.WriteLine(" Press enter to retry.");
 
                 Console.ReadLine();
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("Searching for compatible devices...");
+                Console.WriteLine(" Searching for compatible devices...");
                 gamepads = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices).ToList();
                 joysticks = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices).ToList();
             }
 
-            Console.WriteLine("\nDevices found:");
+            Console.WriteLine("\n Devices found:");
 
-            Console.WriteLine("\n  Gamepads:");
+            Console.WriteLine("\n   Gamepads:");
 
             for (int i = 0; i < gamepads.Count; i++)
                 Console.WriteLine($"\t{i + 1}. {gamepads[i].ProductName}");
             if (gamepads.Count == 0)
                 Console.WriteLine("\t-");
 
-            Console.WriteLine("\n  Joysticks:");
+            Console.WriteLine("\n   Joysticks:");
             for (int i = gamepads.Count; i < joysticks.Count; i++)
                 Console.WriteLine($"\t{i + 1}. {joysticks[i - gamepads.Count].ProductName}");
             if (joysticks.Count == 0)
@@ -295,7 +303,7 @@ namespace JoystickAxisPulsator
             while (joystickGuid == Guid.Empty)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("\n\nSelect the number of your gamepad/joystick: ");
+                Console.Write("\n\n Select the number of your gamepad/joystick: ");
                 Console.ForegroundColor = ConsoleColor.White;
                 int id = int.Parse(Console.ReadLine()) - 1;
                 if (id < gamepads.Count)
@@ -311,7 +319,7 @@ namespace JoystickAxisPulsator
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"\nInvalid id. Please enter a valid number (1-{joysticks.Count + gamepads.Count}).");
+                    Console.WriteLine($"\n Invalid id. Please enter a valid number (1-{joysticks.Count + gamepads.Count}).");
                 }
             }
             joysticks.Clear();
@@ -370,21 +378,21 @@ namespace JoystickAxisPulsator
                 {
                     case 0:
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("Move your joystick around to detect input types.\n");
+                        Console.WriteLine(" Move your joystick around to detect input types.\n");
                         Console.ForegroundColor = ConsoleColor.White;
 
-                        Console.WriteLine("Inputs detected: \n");
+                        Console.WriteLine(" Inputs detected: \n");
                         for (int i = 0; i < allInputs.Count; i++)
                             Console.WriteLine($"  {i + 1}. {allInputs[i].name} ->  {allInputs[i].cValue}\t\t\t\t\t\t\t\t\t\t");
                         break;
                     case 1:
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine($"Set your joystick to its {calPositions[cCalPosIndex]} position, then press enter.");
+                        Console.WriteLine($" Set your joystick to its {calPositions[cCalPosIndex]} position, then press enter.\t\t");
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
                     case 2:
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine($"Move your joystick around to test its configuration, then set it to its default (middle) position.");
+                        Console.WriteLine($" Move your joystick around to test its configuration, then set it to its default (middle) position.");
                         Console.ForegroundColor = ConsoleColor.White;
                         dotPos.X = (int)(inputX.GetRatio() * 31);
                         dotPos.Y = (int)Math.Round(inputY.GetRatio() * 12);
@@ -393,7 +401,7 @@ namespace JoystickAxisPulsator
                         break;
                     case 3:
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("Move the joystick around VERY slightly to select its dead zone.\t\t\t\t\t\t\t");
+                        Console.WriteLine(" Move the joystick around VERY slightly to select its dead zone.\t\t\t\t\t\t");
                         Console.ForegroundColor = ConsoleColor.White;
                         dotPos.X = (int)(inputX.GetRatio() * 31);
                         dotPos.Y = (int)Math.Round(inputY.GetRatio() * 12);
@@ -409,7 +417,7 @@ namespace JoystickAxisPulsator
                 Console.WriteLine("\t\t\t\t\t\t\t\t\t\t\t\t");
                 foreach (var i in inputs)
                 {
-                    Console.Write($"{i.Key}: ");
+                    Console.Write($" {i.Key}: ");
                     if (i.Value == null)
                         Console.Write("ignore");
                     else
@@ -430,28 +438,28 @@ namespace JoystickAxisPulsator
                 {
                     case 0:
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress the number of your {supportedInputs[cInputIndex]} ({sIInfos[cInputIndex]}) (or press enter to ignore it)  ");
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press the number of your {supportedInputs[cInputIndex]} ({sIInfos[cInputIndex]}) (or press enter to ignore it)  ");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
                     case 1:
                         DrawAignmentMap();
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to confirm.");
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press enter to confirm.");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
                     case 2:
                         DrawAignmentMap();
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to proceed, or 'R' to reconfigure.");
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press enter to proceed, or 'R' to reconfigure.");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
                     case 3:
                         DrawAignmentMap();
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\nPress enter to conclude calibration, or 'R' to reset dead zone.");
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press enter to conclude calibration, or 'R' to reset dead zone.");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
@@ -557,6 +565,11 @@ namespace JoystickAxisPulsator
                             case 3:
                                 calibrationPhase++;
                                 calibrationDone = true;
+                                inputX.role = Axis.AxisRole.yaw;
+                                inputY.role = Axis.AxisRole.pitch;
+                                if (inputZ != null)
+                                    inputZ.role = Axis.AxisRole.roll;
+                                controlScheme = "rocket";
                                 break;
                         }
                     }
@@ -580,22 +593,22 @@ namespace JoystickAxisPulsator
             Console.Clear();
             DrawTitle();
 
-            Console.WriteLine("Select control scheme\n");
+            Console.WriteLine(" Select control scheme\n");
 
-            Console.WriteLine("  1. X: AD; Y: WS; Z: QE (for rockets)");
-            Console.WriteLine("  2. X: QE; Y: WS; Z: AD (for planes)");          
+            Console.WriteLine("   1. X: A-D; Y: W-S; Z: Q-E (for rockets)");
+            Console.WriteLine("   2. X: Q-E; Y: W-S; Z: A-D (for planes)");          
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("\nChoose your scheme (1-2): ");
+            Console.Write("\n Choose your scheme (1-2): ");
             Console.ForegroundColor = ConsoleColor.White;
 
             int id = int.Parse(Console.ReadLine());
             while (id < 1 || id > 5)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\nInvalid id. Please enter a valid number (1-2).");
+                Console.WriteLine("\n Invalid id. Please enter a valid number (1-2).");
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("\nChoose your scheme (1-2): ");
+                Console.Write("\n Choose your scheme (1-2): ");
                 Console.ForegroundColor = ConsoleColor.White;
 
                 id = int.Parse(Console.ReadLine());
@@ -608,14 +621,18 @@ namespace JoystickAxisPulsator
                     inputY.role = Axis.AxisRole.pitch;
                     if(inputZ != null)
                         inputZ.role = Axis.AxisRole.roll;
+                    controlScheme = "rocket";
                     break;
                 case 2:
                     inputX.role = Axis.AxisRole.roll;
                     inputY.role = Axis.AxisRole.pitch;
                     if (inputZ != null)
                         inputZ.role = Axis.AxisRole.yaw;
+                    controlScheme = "plane";
                     break;
             }
+
+            ShowMainMenu();
         }
 
         static void SelectFrequency()
@@ -623,26 +640,26 @@ namespace JoystickAxisPulsator
             Console.Clear();
             DrawTitle();
 
-            Console.WriteLine("Select frequency\n");
+            Console.WriteLine(" Select frequency\n");
 
-            Console.WriteLine("  1. 5   Hz   precision: ultra     (0.5%);  stability: low");
-            Console.WriteLine("  2. 10  Hz   precision: very high (1%);    stability: medium");
-            Console.WriteLine("  3. 20  Hz   precision: high      (2%);    stability: high"); 
-            Console.WriteLine("  4. 50  Hz   precision: medium    (5%);    stability: ?");
-            Console.WriteLine("  5. 100 Hz   precision: low       (10%);   stability: ?");
+            Console.WriteLine("   1. 5   Hz   precision: ultra     (0.5%);  stability: low");
+            Console.WriteLine("   2. 10  Hz   precision: very high (1%);    stability: medium");
+            Console.WriteLine("   3. 20  Hz   precision: high      (2%);    stability: high"); 
+            Console.WriteLine("   4. 50  Hz   precision: medium    (5%);    stability: ?");
+            Console.WriteLine("   5. 100 Hz   precision: low       (10%);   stability: ?");
 
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("\nChoose your frequency (1-5): ");
+            Console.Write("\n Choose your frequency (1-5): ");
             Console.ForegroundColor = ConsoleColor.White;
 
             int id = int.Parse(Console.ReadLine());
             while (id < 1 || id > 5)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\nInvalid id. Please enter a valid number (1-5).");
+                Console.WriteLine("\n Invalid id. Please enter a valid number (1-5).");
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("\nChoose your frequency (1-5): ");
+                Console.Write("\n Choose your frequency (1-5): ");
                 Console.ForegroundColor = ConsoleColor.White;
 
                 id = int.Parse(Console.ReadLine());
@@ -670,11 +687,13 @@ namespace JoystickAxisPulsator
             ShowMainMenu();
         }
 
-        static void StartPulsing()
+        static async void StartPulsing()
         {
             Task.Run(() => { Pulser(inputX); });
             Task.Run(() => { Pulser(inputY); });
-            Task.Run(() => { Pulser(inputZ); });
+            await Task.Run(() => { Pulser(inputZ); });
+
+            ShowMainMenu();
         }
 
         static void Pulser(Axis axis)
