@@ -190,7 +190,7 @@ namespace JoystickAxisPulsator
             Console.ForegroundColor = ConsoleColor.White;
 
 
-            Console.WriteLine("  3. Select target window");
+            Console.WriteLine("  3. Select control scheme");
 
 
             Console.Write("  4. Select pulse frequency");
@@ -236,7 +236,7 @@ namespace JoystickAxisPulsator
                     }
                     break;
                 case 3:
-                    SelectWindow();
+                    SelectControls();
                     break;
                 case 4:
                     SelectFrequency();
@@ -570,9 +570,52 @@ namespace JoystickAxisPulsator
             ShowMainMenu();
         }
 
-        static void SelectWindow()
+        /*static void SelectWindow()
         {
 
+        }*/
+        
+        static void SelectControls()
+        {
+            Console.Clear();
+            DrawTitle();
+
+            Console.WriteLine("Select control scheme\n");
+
+            Console.WriteLine("  1. X: AD; Y: WS; Z: QE (for rockets)");
+            Console.WriteLine("  2. X: QE; Y: WS; Z: AD (for planes)");          
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("\nChoose your scheme (1-2): ");
+            Console.ForegroundColor = ConsoleColor.White;
+
+            int id = int.Parse(Console.ReadLine());
+            while (id < 1 || id > 5)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nInvalid id. Please enter a valid number (1-2).");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("\nChoose your scheme (1-2): ");
+                Console.ForegroundColor = ConsoleColor.White;
+
+                id = int.Parse(Console.ReadLine());
+            }
+
+            switch (id)
+            {
+                case 1:
+                    inputX.role = Axis.AxisRole.yaw;
+                    inputY.role = Axis.AxisRole.pitch;
+                    if(inputZ != null)
+                        inputZ.role = Axis.AxisRole.roll;
+                    break;
+                case 2:
+                    inputX.role = Axis.AxisRole.roll;
+                    inputY.role = Axis.AxisRole.pitch;
+                    if (inputZ != null)
+                        inputZ.role = Axis.AxisRole.yaw;
+                    break;
+            }
         }
 
         static void SelectFrequency()
