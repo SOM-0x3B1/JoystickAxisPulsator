@@ -30,6 +30,8 @@ namespace JoystickAxisPulsator
         private static Axis inputX;
         private static Axis inputY;
         private static Axis inputZ;
+        private static int cCalPosIndex = 0;
+        private static int calibrationPhase = 0;
         private static InputSimulator inputSimulator = new InputSimulator();
         private static string controlScheme = "";
 
@@ -59,6 +61,8 @@ namespace JoystickAxisPulsator
             }
 
             Console.SetWindowSize(120, 38);
+            Console.SetBufferSize(120, 38);
+            AdvancedDisplay.DisableConsoleQuickEdit();
 
             ShowWarningPrompt();
 
@@ -90,10 +94,10 @@ namespace JoystickAxisPulsator
         static void DrawTitle()
         {
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(" ====================================");
-            Console.WriteLine(" ||   Joystick Axis Pulsator v0.1  ||");
-            Console.WriteLine(" ||        by SOM-0x3B1            ||");
-            Console.WriteLine(" ====================================\n");
+            Console.WriteLine(" ======================================");
+            Console.WriteLine(" ||   Joystick Axis Pulsator v0.1.0  ||");
+            Console.WriteLine(" ||          by SOM-0x3B1            ||");
+            Console.WriteLine(" ======================================\n");
         }
 
         static void DrawAignmentMap()
@@ -348,9 +352,7 @@ namespace JoystickAxisPulsator
             Dictionary<string, Axis> inputs = new Dictionary<string, Axis>();
 
             string[] calPositions = { "front left", "back right", "Z left", "Z right" };
-            int cCalPosIndex = 0;
-
-            int calibrationPhase = 0;
+            
             calibrationDone = false;
 
             Console.CursorVisible = false;
@@ -543,15 +545,14 @@ namespace JoystickAxisPulsator
                                     case 1:
                                         inputX.SetMax();
                                         inputY.SetMax();
+                                        if (inputZ == null)
+                                            cCalPosIndex += 2;
                                         break;
                                     case 2:
-                                        if (inputZ != null)
-                                        {
+                                        if (inputZ != null) { 
                                             inputZ.SetMin();
                                             zDotPos = 31;
-                                        }
-                                        else
-                                            calibrationPhase++;
+                                        }  
                                         break;
                                     case 3:
                                         inputZ.SetMax();
@@ -696,13 +697,18 @@ namespace JoystickAxisPulsator
             int statusDelay = 0;
             int statusIndex = 0;
             Console.WriteLine("\n Running...");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n Press ESC to exit.");
+            Console.ForegroundColor = ConsoleColor.White;
 
             _ = Task.Run(() => { Pulser(inputX); });
             _ = Task.Run(() => { Pulser(inputY); });
             if(inputZ != null)
                 _ = Task.Run(() => { Pulser(inputZ); });
 
-            while (true)
+            Console.CursorVisible = false;
+
+            while (pulsing)
             {
                 joystick.Poll();
                 JoystickUpdate[] datas = joystick.GetBufferedData();
@@ -720,7 +726,7 @@ namespace JoystickAxisPulsator
                 Thread.Sleep(1000 / frequency);
 
                 statusDelay++;
-                if(statusDelay > 5)
+                if (statusDelay > 5)
                 {
                     Console.SetCursorPosition(0, statusLine);
                     Console.WriteLine(" Running" + statuses[statusIndex] + "    ");
@@ -729,7 +735,19 @@ namespace JoystickAxisPulsator
                         statusIndex = 0;
                     statusDelay = 0;
                 }
+
+                ConsoleKeyInfo consoleKeyInfo;
+                if (Console.KeyAvailable)
+                {
+                    while (Console.KeyAvailable)
+                        consoleKeyInfo = Console.ReadKey(true);
+                    consoleKeyInfo = Console.ReadKey(true);
+                    if (consoleKeyInfo.Key == ConsoleKey.Escape)
+                        pulsing = false;
+                }
             }
+
+            Console.CursorVisible = true;
 
             ShowMainMenu();
         }
