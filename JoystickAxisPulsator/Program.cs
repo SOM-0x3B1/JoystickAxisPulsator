@@ -257,7 +257,21 @@ namespace JoystickAxisPulsator
                     SelectFrequency();
                     break;
                 case 5:
-                    StartPulsing();
+                    if (joystick != null && controlScheme != "" && calibrationDone)
+                        StartPulsing();
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        if(joystick == null)
+                            Console.WriteLine(" No gamepad/joystick found.");
+                        else if(controlScheme == "")
+                            Console.WriteLine(" Controls not defined.");
+                        else if (!calibrationDone)
+                            Console.WriteLine(" Missing calibration.");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Thread.Sleep(500);
+                        ShowMainMenu();
+                    }
                     break;
                 default:
                     ShowMainMenu();

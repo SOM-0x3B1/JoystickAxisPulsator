@@ -53,7 +53,11 @@ namespace JoystickAxisPulsator
             double result = 0.5;
 
             if (deadZoneRange == 0 || !Program.calibrationDone || cValue < middleValue - deadZoneRange || cValue > middleValue + deadZoneRange)
-                result = (double)cValue / maxValue - minValue;
+                result = (double)(cValue - minValue) / (maxValue - minValue);
+            if (result < 0)
+                result = 0;
+            else if (result > 1)
+                result = 1;
 
             if (inverted)
                 return 1 - result;
