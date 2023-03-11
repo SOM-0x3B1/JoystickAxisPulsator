@@ -72,6 +72,8 @@
   <ItemGroup>
     <Compile Include="AdvancedConsoleSettings.cs" />
     <Compile Include="Axis.cs" />
+    <Compile Include="Button.cs" />
+    <Compile Include="Input.cs" />
     <Compile Include="Coord.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

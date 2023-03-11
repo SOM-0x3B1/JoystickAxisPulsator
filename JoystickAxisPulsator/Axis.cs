@@ -2,35 +2,33 @@
 
 namespace JoystickAxisPulsator
 {
-    public class Axis
+    public class Axis : Input
     {
-        public string name;
         public AxisRole role;
-        public int cValue;
         public int maxValue;
         public int minValue;
         public int middleValue;
         public int deadZoneRange = 0;
         public bool inverted = false;
-        public bool calibrated = false;
 
         public enum AxisRole { yaw, pitch, roll }
 
 
-        public Axis(string name, int value) 
+        public Axis(string name, string rawName, int value) 
         { 
             this.name = name;
-            this.cValue = value;
+            this.rawName = rawName;
+            this.value = value;
         }
 
         public void UpdateDeadZone() {
-            if (Math.Abs(cValue - middleValue) > deadZoneRange)
-                deadZoneRange = Math.Abs(cValue - middleValue);
+            if (Math.Abs(value - middleValue) > deadZoneRange)
+                deadZoneRange = Math.Abs(value - middleValue);
         }
 
-        public void SetMin() { minValue = cValue; }
+        public void SetMin() { minValue = value; }
         public void SetMax() { 
-            maxValue = cValue; 
+            maxValue = value; 
             if(minValue > maxValue)
             {
                 inverted = true;
@@ -47,8 +45,8 @@ namespace JoystickAxisPulsator
         {
             double result = 0.5;
 
-            if (deadZoneRange == 0 || !Program.calibrationDone || cValue < middleValue - deadZoneRange || cValue > middleValue + deadZoneRange)
-                result = (double)(cValue - minValue) / (maxValue - minValue);
+            if (deadZoneRange == 0 || !Program.calibrationDone || value < middleValue - deadZoneRange || value > middleValue + deadZoneRange)
+                result = (double)(value - minValue) / (maxValue - minValue);
             if (result < 0)
                 result = 0;
             else if (result > 1)

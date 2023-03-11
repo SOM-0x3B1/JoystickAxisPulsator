@@ -24,11 +24,14 @@ namespace JoystickAxisPulsator
         private static List<string> alignmentMap = new List<string>();
         private static Coord dotPos = new Coord(0, 0);
         private static int zDotPos = 0;
-        private static List<Axis> allInputs = new List<Axis>();
+        private static List<Input> allInputs = new List<Input>();
         private static Dictionary<string, int> registeredInputs = new Dictionary<string, int>();
+        private static Dictionary<string, Axis> AxesByRawName = new Dictionary<string, Axis>();
         private static Axis inputX;
         private static Axis inputY;
         private static Axis inputZ;
+        private static Button pauseButton;
+        private static string rawPuseButtonName = "";
         private static int cCalPosIndex = 0;
         private static int calibrationPhase = 0;
         private static InputSimulator inputSimulator = new InputSimulator();
@@ -362,7 +365,8 @@ namespace JoystickAxisPulsator
             string[] supportedInputs = { "X axis", "Y axis", "Z axis", "Pause button" };
             string[] sIInfos = { "left-right", "front-back", "if you can twist the joystick, or have 2 of them", "toggles the pulses" };
             int cInputIndex = 0;
-            Dictionary<string, Axis> inputs = new Dictionary<string, Axis>();
+            Dictionary<string, Axis> AxesByAxisName = new Dictionary<string, Axis>();
+            
 
             string[] calPositions = { "front left", "back right", "Z left", "Z right" };
             
@@ -377,14 +381,24 @@ namespace JoystickAxisPulsator
                 JoystickUpdate[] datas = joystick.GetBufferedData();
                 foreach (JoystickUpdate state in datas)
                 {
-                    string inputType = state.Offset.ToString();
-                    if (!registeredInputs.ContainsKey(inputType))
+                    string rawInputName = state.Offset.ToString();
+                    if (calibrationPhase == 0)
                     {
-                        registeredInputs.Add(inputType, allInputs.Count);
-                        allInputs.Add(new Axis(inputType, state.Value));
+                        if (!registeredInputs.ContainsKey(rawInputName))
+                        {
+                            registeredInputs.Add(rawInputName, allInputs.Count);
+                            allInputs.Add(new Input(rawInputName, state.Value));
+                        }
+                        else
+                            allInputs[registeredInputs[rawInputName]].value = state.Value;
                     }
                     else
-                        allInputs[registeredInputs[inputType]].cValue = state.Value;
+                    {
+                        if(rawPuseButtonName == rawInputName)
+                            pauseButton.value = state.Value;
+                        else
+                            AxesByRawName[rawInputName].value = state.Value;
+                    }
                 }
 
                 Console.SetCursorPosition(0, 5);
@@ -398,7 +412,7 @@ namespace JoystickAxisPulsator
 
                         Console.WriteLine(" Inputs detected: \n");
                         for (int i = 0; i < allInputs.Count; i++)
-                            Console.WriteLine($"  {i + 1}. {allInputs[i].name} ->  {allInputs[i].cValue}\t\t\t\t\t\t\t\t\t\t");
+                            Console.WriteLine($"  {i + 1}. {allInputs[i].rawName} ->  {allInputs[i].value}\t\t\t\t\t\t\t\t\t\t");
                         break;
                     case 1:
                         Console.ForegroundColor = ConsoleColor.Green;
@@ -427,27 +441,56 @@ namespace JoystickAxisPulsator
                         if (inputZ != null)
                             inputZ.UpdateDeadZone();
                         break;
+                    case 4:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine(" Make sure that your pause button is not pressed.\t\t\t\t\t\t");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        dotPos.X = (int)(inputX.GetRatio() * 31);
+                        dotPos.Y = (int)Math.Round(inputY.GetRatio() * 12);
+                        if (inputZ != null)
+                            zDotPos = (int)(inputZ.GetRatio() * 31);
+                        break;
+                    case 5:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine(" Keep your pause button pressed, and press enter.\t\t\t\t\t\t");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        dotPos.X = (int)(inputX.GetRatio() * 31);
+                        dotPos.Y = (int)Math.Round(inputY.GetRatio() * 12);
+                        if (inputZ != null)
+                            zDotPos = (int)(inputZ.GetRatio() * 31);
+                        break;
                 }
 
                 Console.WriteLine("\t\t\t\t\t\t\t\t\t\t\t\t");
-                foreach (var i in inputs)
+                foreach (var i in AxesByRawName)
                 {
-                    Console.Write($" {i.Key}: ");
+                    Console.Write($" {i.Value.name}: ");
                     if (i.Value == null)
                         Console.Write("ignore");
                     else
                     {
-                        Console.Write($"{i.Value.name} -> {i.Value.cValue}");
-                        if (i.Value.calibrated) {
-                            Console.Write($"\t({Math.Round(i.Value.GetRatio() * 100, 1)}%)");
-                            if (i.Value.deadZoneRange > 0)
-                                Console.Write($"\tdeadzone: {i.Value.middleValue - i.Value.deadZoneRange} - {i.Value.middleValue + i.Value.deadZoneRange}\t({Math.Round((double)i.Value.deadZoneRange / i.Value.middleValue * 100, 1)}%)");
-                            else
-                                Console.Write("\t\t\t");
+                        Console.Write($"{i.Value.rawName}\t");
+                        if (calibrationPhase > 0) {
+                            Console.Write($" -> {i.Value.value}");
+                            if (i.Value.calibrated) {
+                                Console.Write($"\t({Math.Round(i.Value.GetRatio() * 100, 1)}%)");
+                                if (i.Value.deadZoneRange > 0)
+                                    Console.Write($"\tdeadzone: {i.Value.middleValue - i.Value.deadZoneRange} - {i.Value.middleValue + i.Value.deadZoneRange}\t({Math.Round((double)i.Value.deadZoneRange / i.Value.middleValue * 100, 1)}%)");
+                                else
+                                    Console.Write("\t\t\t");
+                            }
                         }
                     }
                     Console.WriteLine("\t\t\t\t");
                 }
+                Console.Write($" Pause: ");
+                if (pauseButton == null)
+                    Console.Write("ignore");
+                else
+                    Console.Write($"{pauseButton.rawName} -> {pauseButton.value}");
+                Console.WriteLine("\t\t\t\t");
+
+
 
                 switch (calibrationPhase)
                 {
@@ -474,7 +517,21 @@ namespace JoystickAxisPulsator
                     case 3:
                         DrawAignmentMap();
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press enter to conclude calibration, or 'R' to reset dead zone.");
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press enter to proceed, or 'R' to reset dead zone.");
+                        Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                    case 4:
+                        DrawAignmentMap();
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press enter to proceed.\t\t\t\t\t");
+                        Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                    case 5:
+                        DrawAignmentMap();
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press enter to conclude calibration, or 'R' to reconfigure.");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
@@ -491,7 +548,28 @@ namespace JoystickAxisPulsator
                         switch (calibrationPhase)
                         {
                             case 0:
-                                inputs[supportedInputs[cInputIndex]] = allInputs[int.Parse(consoleKeyInfo.KeyChar.ToString()) - 1];
+                                Input cInput = allInputs[int.Parse(consoleKeyInfo.KeyChar.ToString()) - 1];
+                                if (cInputIndex < 3)
+                                {
+                                    AxesByAxisName[supportedInputs[cInputIndex]] = new Axis(supportedInputs[cInputIndex], cInput.rawName, cInput.value);
+                                    if (AxesByAxisName[supportedInputs[cInputIndex]] != null)
+                                        AxesByRawName[cInput.rawName] = AxesByAxisName[supportedInputs[cInputIndex]];
+                                }
+                                else
+                                {
+                                    pauseButton = new Button(supportedInputs[cInputIndex], cInput.rawName, cInput.value);
+                                    rawPuseButtonName = cInput.rawName;
+
+                                    calibrationPhase++;
+                                    dotPos.X = 0;
+                                    dotPos.Y = 0;
+                                    if (inputZ != null)
+                                        zDotPos = 0;
+
+                                    inputX = AxesByAxisName["X axis"];
+                                    inputY = AxesByAxisName["Y axis"];
+                                    inputZ = AxesByAxisName["Z axis"];
+                                }
                                 cInputIndex++;
                                 Console.Clear();
                                 DrawTitle();
@@ -506,11 +584,13 @@ namespace JoystickAxisPulsator
                                 calibrationPhase = 0;
                                 cCalPosIndex = 0;
                                 cInputIndex = 0;
-                                inputs.Clear();
+                                AxesByAxisName.Clear();
+                                AxesByRawName.Clear();
                                 inputX.calibrated = false;
                                 inputY.calibrated = false;
                                 if (inputZ != null)
                                     inputZ.calibrated = false;
+                                pauseButton.calibrated = false;
 
                                 Console.Clear();
                                 DrawTitle();
@@ -521,6 +601,21 @@ namespace JoystickAxisPulsator
                                 if (inputZ != null)
                                     inputZ.deadZoneRange = 0;                                                                
                                 break;
+                            case 4:
+                                calibrationPhase = 0;
+                                cCalPosIndex = 0;
+                                cInputIndex = 0;
+                                AxesByAxisName.Clear();
+                                AxesByRawName.Clear();
+                                inputX.calibrated = false;
+                                inputY.calibrated = false;
+                                if (inputZ != null)
+                                    inputZ.calibrated = false;
+                                pauseButton.calibrated = false;
+
+                                Console.Clear();
+                                DrawTitle();
+                                break;
                         }
                     }
                     else if (consoleKeyInfo.Key == ConsoleKey.Enter)
@@ -528,7 +623,10 @@ namespace JoystickAxisPulsator
                         switch (calibrationPhase)
                         {
                             case 0:
-                                inputs[supportedInputs[cInputIndex]] = null;
+                                if (cInputIndex < 3)
+                                    AxesByAxisName[supportedInputs[cInputIndex]] = null;
+                                else
+                                    pauseButton = null;
                                 cInputIndex++;
                                 if (cInputIndex == supportedInputs.Length)
                                 {
@@ -538,9 +636,9 @@ namespace JoystickAxisPulsator
                                     if (inputZ != null)
                                         zDotPos = 0;
 
-                                    inputX = inputs["X axis"];
-                                    inputY = inputs["Y axis"];
-                                    inputZ = inputs["Z axis"];
+                                    inputX = AxesByAxisName["X axis"];
+                                    inputY = AxesByAxisName["Y axis"];
+                                    inputZ = AxesByAxisName["Z axis"];
 
                                     Console.Clear();
                                     DrawTitle();
@@ -581,18 +679,29 @@ namespace JoystickAxisPulsator
                                 break;
                             case 3:
                                 calibrationPhase++;
-                                calibrationDone = true;
+                                
                                 inputX.role = Axis.AxisRole.yaw;
                                 inputY.role = Axis.AxisRole.pitch;
                                 if (inputZ != null)
                                     inputZ.role = Axis.AxisRole.roll;
                                 controlScheme = "rocket";
+
+                                if (pauseButton == null)
+                                    calibrationDone = true;
+
+                                break;
+                            case 4:
+                                pauseButton.SetLow();
+                                calibrationPhase++;
+                                break;
+                            case 5:
+                                pauseButton.SetHigh();
+                                calibrationDone = true;
                                 break;
                         }
                     }
                 }
-
-                Thread.Sleep(1000 / frequency);
+                Thread.Sleep(10);
             }
 
             Console.CursorVisible = true;
@@ -727,14 +836,15 @@ namespace JoystickAxisPulsator
                 JoystickUpdate[] datas = joystick.GetBufferedData();
                 foreach (JoystickUpdate state in datas)
                 {
-                    string inputType = state.Offset.ToString();
-                    if (!registeredInputs.ContainsKey(inputType))
+                    string rawInputName = state.Offset.ToString();
+                    if (rawPuseButtonName == rawInputName)
                     {
-                        registeredInputs.Add(inputType, allInputs.Count);
-                        allInputs.Add(new Axis(inputType, state.Value));
+                        pauseButton.value = state.Value;
+                        if (pauseButton.value == pauseButton.highValue)
+                            pulsing = false;
                     }
                     else
-                        allInputs[registeredInputs[inputType]].cValue = state.Value;
+                        AxesByRawName[rawInputName].value = state.Value;
                 }
                 Thread.Sleep(1000 / frequency);
 
