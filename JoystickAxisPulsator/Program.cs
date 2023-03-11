@@ -496,7 +496,7 @@ namespace JoystickAxisPulsator
                 {
                     case 0:
                         Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press the number of your {supportedInputs[cInputIndex]} ({sIInfos[cInputIndex]}) (or press enter to ignore it)  ");
+                        Console.Write($"\t\t\t\t\t\t\t\t\t\t\t\t\n Press the number of your {supportedInputs[cInputIndex]} ({sIInfos[cInputIndex]}) (or press enter to ignore it)\t\t\t\t\t\t\t\t\t\t\t");
                         Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
