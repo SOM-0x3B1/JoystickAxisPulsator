@@ -396,7 +396,7 @@ namespace JoystickAxisPulsator
                     {
                         if(rawPuseButtonName == rawInputName)
                             pauseButton.value = state.Value;
-                        else
+                        else if (AxesByRawName.ContainsKey(rawInputName))
                             AxesByRawName[rawInputName].value = state.Value;
                     }
                 }
@@ -843,7 +843,7 @@ namespace JoystickAxisPulsator
                         if (pauseButton.value == pauseButton.highValue)
                             pulsing = false;
                     }
-                    else
+                    else if (AxesByRawName.ContainsKey(rawInputName))
                         AxesByRawName[rawInputName].value = state.Value;
                 }
                 Thread.Sleep(1000 / frequency);
