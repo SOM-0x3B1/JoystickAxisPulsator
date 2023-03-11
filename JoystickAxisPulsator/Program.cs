@@ -20,7 +20,7 @@ namespace JoystickAxisPulsator
         private static Guid joystickGuid = Guid.Empty;
         private static Joystick joystick;
         private static string productName = "";
-        private static int frequency = 5;
+        private static int frequency = 10;
         private static List<string> alignmentMap = new List<string>();
         private static Coord dotPos = new Coord(0, 0);
         private static int zDotPos = 0;
@@ -483,12 +483,11 @@ namespace JoystickAxisPulsator
                     }
                     Console.WriteLine("\t\t\t\t");
                 }
-                Console.Write($" Pause: ");
-                if (pauseButton == null)
-                    Console.Write("ignore");
-                else
-                    Console.Write($"{pauseButton.rawName} -> {pauseButton.value}");
-                Console.WriteLine("\t\t\t\t");
+                if (pauseButton != null)
+                {
+                    Console.Write($" Pause: {pauseButton.rawName} -> {pauseButton.value}");
+                    Console.WriteLine("\t\t\t\t");
+                }
 
 
 
@@ -768,8 +767,8 @@ namespace JoystickAxisPulsator
 
             Console.WriteLine(" Select frequency\n");
 
-            Console.WriteLine("   1. 5   Hz   precision: ultra     (0.5%);  stability: high");
-            Console.WriteLine("   2. 10  Hz   precision: very high (1%);    stability: medium");
+            Console.WriteLine("   1. 5   Hz   precision: ultra     (0.5%);  stability: medium");
+            Console.WriteLine("   2. 10  Hz   precision: very high (1%);    stability: high");
             Console.WriteLine("   3. 20  Hz   precision: high      (2%);    stability: low"); 
 
 
