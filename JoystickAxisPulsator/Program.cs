@@ -864,7 +864,10 @@ namespace JoystickAxisPulsator
                                 cKey = VirtualKeyCode.VK_A;
                                 break;
                             case Axis.AxisRole.pitch:
-                                cKey = VirtualKeyCode.VK_W;
+                                if (controlScheme == "rocket")
+                                    cKey = VirtualKeyCode.VK_S;
+                                else
+                                    cKey = VirtualKeyCode.VK_W;
                                 break;
                             case Axis.AxisRole.roll:
                                 cKey = VirtualKeyCode.VK_Q;
@@ -880,7 +883,10 @@ namespace JoystickAxisPulsator
                                 cKey = VirtualKeyCode.VK_D;
                                 break;
                             case Axis.AxisRole.pitch:
-                                cKey = VirtualKeyCode.VK_S;
+                                if (controlScheme == "rocket")
+                                    cKey = VirtualKeyCode.VK_W;
+                                else
+                                    cKey = VirtualKeyCode.VK_S;
                                 break;
                             case Axis.AxisRole.roll:
                                 cKey = VirtualKeyCode.VK_E;
