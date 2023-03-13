@@ -22,6 +22,9 @@ namespace JoystickAxisPulsator
         private static List<string> alignmentMap = new List<string>();
         private static Coord XYdotPos = new Coord(0, 0);
         private static int ZDotPos = 0;
+        private static Coord lastXYdotPos = new Coord(0, 0);
+        private static int lastZDotPos = 0;
+        private static int AMTopPos;
 
         private static List<Input> allInputs = new List<Input>();
         private static Dictionary<string, int> registeredInputsByRawName = new Dictionary<string, int>();
@@ -41,9 +44,9 @@ namespace JoystickAxisPulsator
         private static int frequency = 10;
         public static bool pulsing = false;
 
-        private static string tabSpace = "\t\t\t\t\t\t"; 
-        private static string bigTabSpace = "\t\t\t\t\t\t\t\t\t\t"; 
-        private static string gigaTabSpace = "\t\t\t\t\t\t\t\t\t\t\t\t\t"; 
+        private const string tabSpace = "\t\t\t\t\t\t"; 
+        private const string bigTabSpace = "\t\t\t\t\t\t\t\t\t\t"; 
+        private const string gigaTabSpace = "\t\t\t\t\t\t\t\t\t\t\t\t\t"; 
 
 
         static void Main(string[] args)
@@ -91,9 +94,38 @@ namespace JoystickAxisPulsator
         {
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(" ======================================");
-            Console.WriteLine(" ||   Joystick Axis Pulsator v0.1.1  ||");
+            Console.WriteLine(" ||   Joystick Axis Pulsator v0.1.2  ||");
             Console.WriteLine(" ||          by SOM-0x3B1            ||");
             Console.WriteLine(" ======================================\n");
+        }
+
+        static void DrawAMCell(int x, int y)
+        {
+            Console.SetCursorPosition(x, AMTopPos + y);
+
+            if (XYdotPos.X + 7 == x && XYdotPos.Y + 2 == y || (inputZ != null && y == 20 && ZDotPos + 7 == x))
+            {
+                Console.BackgroundColor = ConsoleColor.DarkRed;
+                Console.Write("O");
+                Console.BackgroundColor = ConsoleColor.Black;
+            }
+            else
+            {
+                if (alignmentMap[y][x] == '#')
+                    Console.BackgroundColor = ConsoleColor.White;
+
+                if (((15 - inputX.GetDeadZoneSize(31) + 7 <= x && 15 + inputX.GetDeadZoneSize(31) + 7 >= x)
+                    && (6 - inputY.GetDeadZoneSize(12) + 2 <= y && 6 + inputY.GetDeadZoneSize(12) + 2 >= y))
+                    || (inputZ != null && y == 20 && 15 - inputZ.GetDeadZoneSize(31) + 7 <= x && 15 + inputZ.GetDeadZoneSize(31) + 7 >= x))
+                {
+                    Console.BackgroundColor = ConsoleColor.DarkGray;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                }
+
+                Console.Write(alignmentMap[y][x]);
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.ForegroundColor = ConsoleColor.White;
+            }
         }
 
         static void DrawAignmentMap()
@@ -102,36 +134,46 @@ namespace JoystickAxisPulsator
             for (int y = 0; y < alignmentMap.Count; y++)
             {
                 for (int x = 0; x < alignmentMap[y].Length; x++)
-                {
-                    if (XYdotPos.X + 7 == x && XYdotPos.Y + 2 == y || (inputZ != null && y == 20 && ZDotPos + 7 == x))
-                    {
-                        Console.BackgroundColor = ConsoleColor.DarkRed;
-                        Console.Write("O");
-                        Console.BackgroundColor = ConsoleColor.Black;
-                    }
-                    else
-                    {
-                        if (alignmentMap[y][x] == '#')
-                            Console.BackgroundColor = ConsoleColor.White;
+                    DrawAMCell(x, y);
 
-                        if (((15 - inputX.GetDeadZoneSize(31) + 7 <= x && 15 + inputX.GetDeadZoneSize(31) + 7 >= x)
-                            && (6 - inputY.GetDeadZoneSize(12) + 2 <= y && 6 + inputY.GetDeadZoneSize(12) + 2 >= y))
-                            || (inputZ != null && y == 20 && 15 - inputZ.GetDeadZoneSize(31) + 7 <= x && 15 + inputZ.GetDeadZoneSize(31) + 7 >= x))
-                        {
-                            Console.BackgroundColor = ConsoleColor.DarkGray;
-                            Console.ForegroundColor = ConsoleColor.Black;
-                        }
-
-                        Console.Write(alignmentMap[y][x]);
-                        Console.BackgroundColor = ConsoleColor.Black;
-                        Console.ForegroundColor = ConsoleColor.White;
-
-                    }
-                }
                 Console.Write("\t\t\t\t\t\t\t");
                 Console.WriteLine();
             }
         }
+
+        static void UpdateAM()
+        {
+            lastXYdotPos.X = XYdotPos.X;
+            lastXYdotPos.Y = XYdotPos.Y;
+            XYdotPos.X = (int)(inputX.GetRatio() * 31);
+            XYdotPos.Y = (int)Math.Round(inputY.GetRatio() * 12);
+
+            DrawAMCell(lastXYdotPos.X + 7, lastXYdotPos.Y + 2);
+            DrawAMCell(XYdotPos.X + 7, XYdotPos.Y + 2);
+
+            if (inputZ != null)
+            {
+                lastZDotPos = ZDotPos;
+                ZDotPos = (int)(inputZ.GetRatio() * 31);
+
+                DrawAMCell(lastZDotPos + 7, 20);
+                DrawAMCell(ZDotPos + 7, 20);
+            }
+
+            for (int x = 15 - inputX.GetDeadZoneSize(31) + 7; x <= 15 + inputX.GetDeadZoneSize(31) + 7; x++)
+            {
+                for (int y = 6 - inputY.GetDeadZoneSize(12) + 2; y <= 6 + inputY.GetDeadZoneSize(12) + 2; y++)
+                    DrawAMCell(x, y);
+            }
+            if (inputZ != null)
+            {
+                for (int x = 15 - inputZ.GetDeadZoneSize(31) + 7; x <= 15 + inputZ.GetDeadZoneSize(31) + 7; x++)
+                    DrawAMCell(x, 20);
+            }
+
+            Console.SetCursorPosition(0, AMTopPos + 23);
+        }
+
 
         static void WriteColoredText(string text, ConsoleColor color)
         {
@@ -406,22 +448,6 @@ namespace JoystickAxisPulsator
                 Console.SetCursorPosition(0, 5);
 
 
-                if(calibrationPhase > 1)
-                {
-                    XYdotPos.X = (int)(inputX.GetRatio() * 31);
-                    XYdotPos.Y = (int)Math.Round(inputY.GetRatio() * 12);
-                    if (inputZ != null)
-                        ZDotPos = (int)(inputZ.GetRatio() * 31);
-
-                    if(calibrationPhase == 3)
-                    {
-                        inputX.UpdateDeadZone();
-                        inputY.UpdateDeadZone();
-                        if (inputZ != null)
-                            inputZ.UpdateDeadZone();
-                    }
-                }
-
                 switch (calibrationPhase)
                 {
                     case 0:
@@ -476,8 +502,29 @@ namespace JoystickAxisPulsator
                 }
 
 
-                if(calibrationPhase > 0)
+                if (calibrationPhase == 1)
+                {
+                    AMTopPos = Console.CursorTop + 1;
                     DrawAignmentMap();
+                }
+                else if (calibrationPhase > 1)
+                {
+                    /*XYdotPos.X = (int)(inputX.GetRatio() * 31);
+                    XYdotPos.Y = (int)Math.Round(inputY.GetRatio() * 12);
+                    if (inputZ != null)
+                        ZDotPos = (int)(inputZ.GetRatio() * 31);*/
+
+                    UpdateAM();
+
+                    if (calibrationPhase == 3)
+                    {
+                        inputX.UpdateDeadZone();
+                        inputY.UpdateDeadZone();
+                        if (inputZ != null)
+                            inputZ.UpdateDeadZone();
+                    }
+                }
+                
 
                 switch (calibrationPhase)
                 {
@@ -565,7 +612,11 @@ namespace JoystickAxisPulsator
                                 inputX.deadZoneRange = 0;
                                 inputY.deadZoneRange = 0;
                                 if (inputZ != null)
-                                    inputZ.deadZoneRange = 0;                                                                
+                                    inputZ.deadZoneRange = 0;
+
+                                Console.Clear();
+                                DrawTitle();
+                                DrawAignmentMap();
                                 break;
                             case 4:
                                 calibrationPhase = 0;
