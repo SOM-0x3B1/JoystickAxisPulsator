@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WindowsInput.Native;
 using WindowsInput;
+using System.Runtime.CompilerServices;
 
 namespace JoystickAxisPulsator
 {
@@ -43,6 +44,8 @@ namespace JoystickAxisPulsator
         private static string controlScheme = "";
         private static int frequency = 10;
         public static bool pulsing = false;
+
+        public static bool testing = false;
 
         private const string tabSpace = "\t\t\t\t\t\t"; 
         private const string bigTabSpace = "\t\t\t\t\t\t\t\t\t\t"; 
@@ -87,6 +90,13 @@ namespace JoystickAxisPulsator
             }
 
             ShowMainMenu();
+        }
+
+        static void Exit()
+        {
+            WriteColoredText("\n Shutting down...", ConsoleColor.Red);
+            Thread.Sleep(500);
+            Environment.Exit(0);
         }
 
 
@@ -189,6 +199,23 @@ namespace JoystickAxisPulsator
         }
 
 
+        static bool YesNoPrompt(string question)
+        {
+            WriteColoredText($"\n\n {question} [Y/N]: ", ConsoleColor.Green);
+
+            string input = Console.ReadLine().ToLower();
+            while (input != "n" && input != "y")
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n Invalid format. Please use 'Y' or 'N'.");
+
+                WriteColoredText($"\n\n {question} [Y/N]: ", ConsoleColor.Green);
+
+                input = Console.ReadLine().ToLower();
+            }
+
+            return input == "y";
+        }
 
         static void ShowWarningPrompt()
         {
@@ -206,20 +233,9 @@ namespace JoystickAxisPulsator
                 " software might cause. \n\n" +
                 " Proceed at your own risk.");
 
-            WriteColoredText("\n\n Do you accept these terms? [Y/N]: ", ConsoleColor.Green);
 
-            string input = Console.ReadLine().ToLower();
-            while (input != "n" && input != "y")
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n Invalid format. Please use 'Y' or 'N'.");
-
-                WriteColoredText("\n\n Do you accept these terms? [Y/N]: ", ConsoleColor.Green);
-
-                input = Console.ReadLine().ToLower();
-            }
-            if (input == "n")
-                Environment.Exit(0);
+            if (!YesNoPrompt("Do you accept these terms?"))
+                Exit();
         }
 
         static void ShowMainMenu()
@@ -267,16 +283,22 @@ namespace JoystickAxisPulsator
             Console.WriteLine("   6. Exit");
 
 
-            WriteColoredText("\n What would you like to do? (1-6): ", ConsoleColor.Green);
+            Console.WriteLine("\n Utility\n");
+            Console.WriteLine("   7. Test selected device");
+            Console.WriteLine("   8. Test InputSimulator");
+            Console.WriteLine("   9. Test calibration with output events");
+
+
+            WriteColoredText("\n What would you like to do? (1-9): ", ConsoleColor.Green);
 
 
             int id = int.Parse(Console.ReadLine());
-            while (id < 1 || id > 6)
+            while (id < 1 || id > 9)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n Invalid id. Please enter a valid number (1-6).");
+                Console.WriteLine("\n Invalid id. Please enter a valid number (1-9).");
 
-                WriteColoredText("\n What would you like to do? (1-6): ", ConsoleColor.Green);
+                WriteColoredText("\n What would you like to do? (1-9): ", ConsoleColor.Green);
 
                 id = int.Parse(Console.ReadLine());
             }
@@ -308,9 +330,9 @@ namespace JoystickAxisPulsator
                     else
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        if(joystick == null)
+                        if (joystick == null)
                             Console.WriteLine(" No gamepad/joystick found.");
-                        else if(controlScheme == "")
+                        else if (controlScheme == "")
                             Console.WriteLine(" Controls not defined.");
                         else if (!calibrationDone)
                             Console.WriteLine(" Missing calibration.");
@@ -320,7 +342,48 @@ namespace JoystickAxisPulsator
                     }
                     break;
                 case 6:
-                    Environment.Exit(0);
+                    Exit();
+                    break;
+                case 7:
+                    if (joystick != null)
+                    {
+
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        if (joystick == null)
+                            Console.WriteLine(" No gamepad/joystick found.");
+                        else if (controlScheme == "")
+                            Console.WriteLine(" Controls not defined.");
+                        else if (!calibrationDone)
+                            Console.WriteLine(" Missing calibration.");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Thread.Sleep(500);
+                        ShowMainMenu();
+                    }
+                    break;
+                case 8:
+                    
+                    break;
+                case 9:
+                    if (joystick != null && controlScheme != "" && calibrationDone)
+                    {
+
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        if (joystick == null)
+                            Console.WriteLine(" No gamepad/joystick found.");
+                        else if (controlScheme == "")
+                            Console.WriteLine(" Controls not defined.");
+                        else if (!calibrationDone)
+                            Console.WriteLine(" Missing calibration.");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Thread.Sleep(500);
+                        ShowMainMenu();
+                    }
                     break;
                 default:
                     ShowMainMenu();
@@ -952,6 +1015,47 @@ namespace JoystickAxisPulsator
                 else
                     Thread.Sleep(baseDelay);
             }
+        }
+
+
+        static void TestDevice()
+        {
+            Console.Clear();
+            DrawTitle();
+
+
+
+            while (testing)
+            {
+                joystick.Poll();
+                JoystickUpdate[] datas = joystick.GetBufferedData();
+                foreach (JoystickUpdate state in datas)
+                    Console.WriteLine(state);
+
+                ConsoleKeyInfo consoleKeyInfo;
+                if (Console.KeyAvailable)
+                {
+                    while (Console.KeyAvailable)
+                        consoleKeyInfo = Console.ReadKey(true);
+                    consoleKeyInfo = Console.ReadKey(true);
+                    if (consoleKeyInfo.Key == ConsoleKey.Escape)
+                        testing = false;
+                }
+
+                Thread.Sleep(100);
+            }
+
+            ShowMainMenu();
+        }
+
+        static void TestInputSim()
+        {
+            
+        }
+
+        static void TestCalibrationAndOutput()
+        {
+
         }
     }
 }
