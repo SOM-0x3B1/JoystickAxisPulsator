@@ -438,7 +438,7 @@ namespace JoystickAxisPulsator
                     }
                     else
                     {
-                        if(puseButtonRawName == rawInputName)
+                        if (puseButtonRawName == rawInputName)
                             pauseButton.value = state.Value;
                         else if (axesByRawName.ContainsKey(rawInputName))
                             axesByRawName[rawInputName].value = state.Value;
@@ -701,7 +701,7 @@ namespace JoystickAxisPulsator
                                 inputY.role = Axis.AxisRole.pitch;
                                 if (inputZ != null)
                                     inputZ.role = Axis.AxisRole.roll;
-                                controlScheme = "rocket";
+                                controlScheme = "vertical";
 
                                 if (pauseButton == null)
                                     calibrationDone = true;
@@ -738,8 +738,8 @@ namespace JoystickAxisPulsator
 
             Console.WriteLine(" Select control scheme\n");
 
-            Console.WriteLine("   1. X: A-D; Y: W-S; Z: Q-E (for rockets)");
-            Console.WriteLine("   2. X: Q-E; Y: W-S; Z: A-D (for planes)");          
+            Console.WriteLine("   1. vertical   [X: A-D; Y: W-S; Z: Q-E] (for rockets)");
+            Console.WriteLine("   2. horizontal [X: Q-E; Y: W-S; Z: A-D] (for cars, planes, boats, etc...)");          
 
             WriteColoredText("\n Choose your scheme (1-2): ", ConsoleColor.Green);
 
@@ -763,14 +763,14 @@ namespace JoystickAxisPulsator
                     inputY.role = Axis.AxisRole.pitch;
                     if(inputZ != null)
                         inputZ.role = Axis.AxisRole.roll;
-                    controlScheme = "rocket";
+                    controlScheme = "vertical";
                     break;
                 case 2:
                     inputX.role = Axis.AxisRole.roll;
                     inputY.role = Axis.AxisRole.pitch;
                     if (inputZ != null)
                         inputZ.role = Axis.AxisRole.yaw;
-                    controlScheme = "plane";
+                    controlScheme = "horizontal";
                     break;
             }
 
@@ -787,7 +787,7 @@ namespace JoystickAxisPulsator
             Console.WriteLine("   1. 5   Hz   precision: ultra     (0.5%);  stability: low");
             Console.WriteLine("   2. 10  Hz   precision: very high (1%);    stability: medium");
             Console.WriteLine("   3. 20  Hz   precision: high      (2%);    stability: high"); 
-            Console.WriteLine("   4. 50  Hz   precision: medium    (5%);    stability: ?"); 
+            Console.WriteLine("   4. 50  Hz   precision: medium    (5%);    stability: risky"); 
 
             WriteColoredText("\n Choose your frequency (1-4): ", ConsoleColor.Green);
 
@@ -915,7 +915,7 @@ namespace JoystickAxisPulsator
                                 cKey = VirtualKeyCode.VK_A;
                                 break;
                             case Axis.AxisRole.pitch:
-                                if (controlScheme == "rocket")
+                                if (controlScheme == "vertical")
                                     cKey = VirtualKeyCode.VK_S;
                                 else
                                     cKey = VirtualKeyCode.VK_W;
@@ -934,7 +934,7 @@ namespace JoystickAxisPulsator
                                 cKey = VirtualKeyCode.VK_D;
                                 break;
                             case Axis.AxisRole.pitch:
-                                if (controlScheme == "rocket")
+                                if (controlScheme == "vertical")
                                     cKey = VirtualKeyCode.VK_W;
                                 else
                                     cKey = VirtualKeyCode.VK_S;
