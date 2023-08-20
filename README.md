@@ -1,7 +1,7 @@
 # Joystick Axis Pulsator
 A standalone Windows application that reads the axis states of a joystick, and sends pulsating keystrokes to the game, thus imitating the analog values.
 
-<img align="right" width="417" height="275" src="https://www.onekilobit.eu/media/uploads/joystickPulsator/main.jpg">
+<img align="right" width="417" height="275" src="https://www.onekilobit.eu/media/uploads/joystickPulsator/main.png">
 
 ### Planned features
 - Wide-range joystick and gamepad detection 
